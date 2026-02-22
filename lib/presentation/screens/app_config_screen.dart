@@ -43,22 +43,26 @@ class AppConfigScreen extends ConsumerWidget {
           // ── Friction type ──────────────────────────────────────────
           const _SectionHeader('Friction Type'),
           const SizedBox(height: 8),
-          ...[
-            FrictionKind.holdToOpen,
-            FrictionKind.puzzle,
-            FrictionKind.confirmation,
-            FrictionKind.math,
-          ].map(
-            (k) => RadioListTile<FrictionKind>(
-              title: Text(_kindLabel(k)),
-              subtitle: Text(_kindDesc(k)),
-              value: k,
-              groupValue: config.kind,
-              onChanged: (v) {
-                if (v != null) {
-                  notifier.updateFrictionConfig(packageName, kind: v);
-                }
-              },
+          RadioGroup<FrictionKind>(
+            groupValue: config.kind,
+            onChanged:
+                (v) => notifier.updateFrictionConfig(packageName, kind: v),
+            child: Column(
+              children:
+                  [
+                        FrictionKind.holdToOpen,
+                        FrictionKind.puzzle,
+                        FrictionKind.confirmation,
+                        FrictionKind.math,
+                      ]
+                      .map(
+                        (k) => RadioListTile<FrictionKind>(
+                          title: Text(_kindLabel(k)),
+                          subtitle: Text(_kindDesc(k)),
+                          value: k,
+                        ),
+                      )
+                      .toList(),
             ),
           ),
           const Divider(),
@@ -148,17 +152,21 @@ class AppConfigScreen extends ConsumerWidget {
           // ── When to apply ──────────────────────────────────────────
           const _SectionHeader('When to Apply'),
           const SizedBox(height: 8),
-          ...FrictionMode.values.map(
-            (m) => RadioListTile<FrictionMode>(
-              title: Text(_modeLabel(m)),
-              subtitle: Text(_modeDesc(m)),
-              value: m,
-              groupValue: config.mode,
-              onChanged: (v) {
-                if (v != null) {
-                  notifier.updateFrictionConfig(packageName, mode: v);
-                }
-              },
+          RadioGroup<FrictionMode>(
+            groupValue: config.mode,
+            onChanged:
+                (v) => notifier.updateFrictionConfig(packageName, mode: v),
+            child: Column(
+              children:
+                  FrictionMode.values
+                      .map(
+                        (m) => RadioListTile<FrictionMode>(
+                          title: Text(_modeLabel(m)),
+                          subtitle: Text(_modeDesc(m)),
+                          value: m,
+                        ),
+                      )
+                      .toList(),
             ),
           ),
 
@@ -455,7 +463,7 @@ class _TierRow extends StatelessWidget {
                 ),
                 // Kind selector
                 DropdownButtonFormField<FrictionKind>(
-                  value: step.kind,
+                  initialValue: step.kind,
                   decoration: const InputDecoration(
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(
@@ -662,7 +670,7 @@ class _ChainStepRow extends StatelessWidget {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<FrictionKind>(
-                        value: step.kind,
+                        initialValue: step.kind,
                         decoration: const InputDecoration(
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
