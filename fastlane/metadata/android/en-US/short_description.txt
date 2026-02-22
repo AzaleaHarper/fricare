@@ -1,0 +1,1 @@
+Add intentional friction before opening apps to reduce compulsive usage.

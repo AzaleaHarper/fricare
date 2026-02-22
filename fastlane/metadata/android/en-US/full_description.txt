@@ -1,0 +1,14 @@
+Fricare introduces intentional friction before opening apps you find yourself compulsively reaching for. Configure delays, puzzles, math challenges, confirmation prompts, or chain multiple friction types together to build mindful habits around app usage.
+
+Features:
+- Hold to Open: Press and hold for a configurable duration
+- Tap Puzzle: Tap highlighted tiles in the correct sequence
+- Math Challenge: Solve arithmetic problems before the app opens
+- Confirmation Prompts: Multi-step "Are you sure?" screens
+- Challenge Chaining: Combine multiple friction types in sequence
+- Dynamic modes: Always, After N Opens, or Escalating friction
+- Per-app configuration with adjustable parameters
+- Auto-starts on boot
+- No internet required, everything runs locally
+
+No root access needed. Uses standard Android APIs (UsageStatsManager) to detect app launches and display friction overlays.

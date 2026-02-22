@@ -1,0 +1,60 @@
+name: Publish to F-Droid
+
+# F-Droid builds apps from source using their own infrastructure.
+# This workflow prepares and validates the F-Droid metadata, and can be used
+# to submit/update the app on the F-Droid repository.
+#
+# To list Fricare on F-Droid:
+# 1. Fork https://gitlab.com/fdroid/fdroiddata
+# 2. Add metadata/com.fricare.fricare.yml (see fastlane/ in this repo)
+# 3. Submit a merge request
+#
+# F-Droid will build from source using the metadata file, so no signing
+# secrets are needed here — F-Droid signs with their own keys.
+
+on:
+  push:
+    tags:
+      - "v*"
+    paths:
+      - "fastlane/**"
+      - "pubspec.yaml"
+
+jobs:
+  validate-metadata:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate fastlane metadata structure
+        run: |
+          echo "Checking F-Droid metadata files..."
+          test -f fastlane/metadata/android/en-US/full_description.txt
+          test -f fastlane/metadata/android/en-US/short_description.txt
+          test -f fastlane/metadata/android/en-US/title.txt
+          echo "All required metadata files present."
+
+      - name: Validate build reproducibility
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.0"
+          channel: stable
+
+      - run: flutter pub get
+
+      - name: Build unsigned APK
+        run: flutter build apk --debug
+        # F-Droid builds from source without signing keys.
+        # A successful debug build confirms the project compiles cleanly.
+
+      - name: Print version info
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}')
+          echo "Version: $VERSION"
+          echo "Tag: ${{ github.ref_name }}"
