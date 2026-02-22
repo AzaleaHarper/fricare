@@ -455,7 +455,7 @@ class _TierRow extends StatelessWidget {
                 ),
                 // Kind selector
                 DropdownButtonFormField<FrictionKind>(
-                  initialValue: step.kind,
+                  value: step.kind,
                   decoration: const InputDecoration(
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(
