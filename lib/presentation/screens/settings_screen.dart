@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/settings_provider.dart';
+import '../theme/app_theme.dart';
 
 const _liberapayUrl = 'https://liberapay.com/azalea_harper';
 const _kofiUrl = 'https://ko-fi.com/azalea_harper';
@@ -30,17 +31,20 @@ class SettingsScreen extends ConsumerWidget {
             child: SegmentedButton<int>(
               segments: const [
                 ButtonSegment(
-                    value: 0,
-                    label: Text('System'),
-                    icon: Icon(Icons.brightness_auto)),
+                  value: 0,
+                  label: Text('System'),
+                  icon: Icon(Icons.brightness_auto),
+                ),
                 ButtonSegment(
-                    value: 1,
-                    label: Text('Light'),
-                    icon: Icon(Icons.light_mode)),
+                  value: 1,
+                  label: Text('Light'),
+                  icon: Icon(Icons.light_mode),
+                ),
                 ButtonSegment(
-                    value: 2,
-                    label: Text('Dark'),
-                    icon: Icon(Icons.dark_mode)),
+                  value: 2,
+                  label: Text('Dark'),
+                  icon: Icon(Icons.dark_mode),
+                ),
               ],
               selected: {settings.themeModeIndex},
               onSelectionChanged: (s) => notifier.setThemeMode(s.first),
@@ -69,15 +73,22 @@ class SettingsScreen extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: color,
                           shape: BoxShape.circle,
-                          border: isSelected
-                              ? Border.all(
-                                  color: theme.colorScheme.onSurface, width: 3)
-                              : null,
+                          border:
+                              isSelected
+                                  ? Border.all(
+                                    color: theme.colorScheme.onSurface,
+                                    width: 3,
+                                  )
+                                  : null,
                         ),
-                        child: isSelected
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 20)
-                            : null,
+                        child:
+                            isSelected
+                                ? Icon(
+                                  Icons.check,
+                                  color: theme.colorScheme.onPrimary,
+                                  size: 20,
+                                )
+                                : null,
                       ),
                     );
                   }),
@@ -139,9 +150,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
           color: Theme.of(context).colorScheme.primary,
         ),
       ),
@@ -169,10 +178,8 @@ class _DonationTile extends StatelessWidget {
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.open_in_new, size: 18),
-      onTap: () => launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      ),
+      onTap:
+          () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
     );
   }
 }

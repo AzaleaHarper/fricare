@@ -25,4 +25,16 @@ class FrictionSettings extends HiveObject {
     this.accentColorIndex = 0,
     this.amoledDark = false,
   });
+
+  FrictionSettings copyWith({
+    bool? globalEnabled,
+    int? themeModeIndex,
+    int? accentColorIndex,
+    bool? amoledDark,
+  }) => FrictionSettings(
+    globalEnabled: globalEnabled ?? this.globalEnabled,
+    themeModeIndex: themeModeIndex ?? this.themeModeIndex,
+    accentColorIndex: accentColorIndex ?? this.accentColorIndex,
+    amoledDark: amoledDark ?? this.amoledDark,
+  );
 }
