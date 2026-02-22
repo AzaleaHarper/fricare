@@ -19,11 +19,13 @@ class InstalledAppsService {
     final apps = await InstalledApps.getInstalledApps(true, true);
 
     return apps
-        .map((app) => InstalledAppInfo(
-              packageName: app.packageName,
-              appName: app.name,
-              icon: app.icon,
-            ))
+        .map(
+          (app) => InstalledAppInfo(
+            packageName: app.packageName,
+            appName: app.name,
+            icon: app.icon,
+          ),
+        )
         .where((app) => app.packageName.isNotEmpty)
         .toList()
       ..sort((a, b) => a.appName.compareTo(b.appName));

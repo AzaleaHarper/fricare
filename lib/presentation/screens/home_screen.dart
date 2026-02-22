@@ -22,10 +22,11 @@ class HomeScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.settings_outlined),
               tooltip: 'Settings',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
             ),
           ],
           bottom: TabBar(
@@ -38,19 +39,11 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 text: 'Protected',
               ),
-              const Tab(
-                icon: Icon(Icons.apps),
-                text: 'Browse',
-              ),
+              const Tab(icon: Icon(Icons.apps), text: 'Browse'),
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            ProtectedAppsTab(),
-            BrowseAppsTab(),
-          ],
-        ),
+        body: const TabBarView(children: [ProtectedAppsTab(), BrowseAppsTab()]),
       ),
     );
   }

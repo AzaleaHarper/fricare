@@ -22,8 +22,8 @@ class FrictionApp extends HiveObject {
     required this.appName,
     this.enabled = true,
     FrictionConfig? frictionConfig,
-  }) : frictionConfig = frictionConfig ??
-            FrictionConfig(kind: FrictionKind.holdToOpen);
+  }) : frictionConfig =
+           frictionConfig ?? FrictionConfig(kind: FrictionKind.holdToOpen);
 
   FrictionApp copyWith({
     String? packageName,
