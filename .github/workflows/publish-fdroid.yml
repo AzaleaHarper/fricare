@@ -16,9 +16,6 @@ on:
   push:
     tags:
       - "v*"
-    paths:
-      - "fastlane/**"
-      - "pubspec.yaml"
 
 jobs:
   validate-metadata:
