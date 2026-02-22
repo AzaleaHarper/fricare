@@ -76,9 +76,9 @@ class _TestFrictionScreenState extends State<TestFrictionScreen> {
 
   void _showSuccess() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Friction completed! App would launch now.'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: const Text('Friction completed! App would launch now.'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
     Navigator.pop(context);
@@ -109,10 +109,10 @@ class _TestFrictionScreenState extends State<TestFrictionScreen> {
                       shape: BoxShape.circle,
                       color:
                           i < _chainIndex
-                              ? Colors.green
-                              : i == _chainIndex
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey.shade300,
+                              : i == _chainIndex
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.outlineVariant,
                     ),
                   );
                 }),

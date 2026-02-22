@@ -63,7 +63,7 @@ class _ValueSliderState extends State<ValueSlider> {
 
   void _commitText() {
     final parsed = int.tryParse(_controller.text);
-    if (parsed != null && parsed >= 1) {
+    if (parsed != null && parsed >= widget.min) {
       widget.onChanged(parsed);
     } else {
       _controller.text = '${widget.value}';
@@ -73,15 +73,15 @@ class _ValueSliderState extends State<ValueSlider> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final sliderVal = widget.value
-        .toDouble()
-        .clamp(widget.min.toDouble(), widget.max.toDouble());
+    final sliderVal = widget.value.toDouble().clamp(
+      widget.min.toDouble(),
+      widget.max.toDouble(),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(widget.label, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -119,8 +119,10 @@ class _ValueSliderState extends State<ValueSlider> {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                   isDense: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 8,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

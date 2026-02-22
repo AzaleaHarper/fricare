@@ -58,14 +58,13 @@ class _FrictionHoldButtonState extends State<FrictionHoldButton>
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          'Hold to Open',
-          style: theme.textTheme.headlineSmall,
-        ),
+        Text('Hold to Open', style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
           'Hold the button for ${widget.holdDurationSeconds} seconds',
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 40),
         GestureDetector(
@@ -84,11 +83,11 @@ class _FrictionHoldButtonState extends State<FrictionHoldButton>
                     CircularProgressIndicator(
                       value: _controller.value,
                       strokeWidth: 8,
-                      backgroundColor: Colors.grey.shade300,
+                      backgroundColor: theme.colorScheme.outlineVariant,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _holding
                             ? theme.colorScheme.primary
-                            : Colors.grey.shade400,
+                            : theme.colorScheme.outline,
                       ),
                     ),
                     Icon(
@@ -96,9 +95,10 @@ class _FrictionHoldButtonState extends State<FrictionHoldButton>
                           ? Icons.check_circle
                           : Icons.touch_app,
                       size: 64,
-                      color: _holding
-                          ? theme.colorScheme.primary
-                          : Colors.grey.shade400,
+                      color:
+                          _holding
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
                     ),
                   ],
                 ),

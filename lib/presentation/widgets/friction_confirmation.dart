@@ -51,7 +51,11 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+        Icon(
+          Icons.warning_amber_rounded,
+          size: 64,
+          color: theme.colorScheme.tertiary,
+        ),
         const SizedBox(height: 24),
         Text(
           _prompts[promptIndex],
@@ -61,7 +65,9 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
         const SizedBox(height: 8),
         Text(
           'Opening ${widget.appName}',
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
@@ -82,7 +88,7 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
                 color:
                     i <= _currentStep
                         ? theme.colorScheme.primary
-                        : Colors.grey.shade300,
+                        : theme.colorScheme.outlineVariant,
               ),
             );
           }),

@@ -95,24 +95,33 @@ class _FrictionMathState extends State<FrictionMath> {
     final op = _isAddition ? '+' : '-';
 
     final borderColor = switch (_flash) {
-      true => Colors.green,
-      false => Colors.red,
+      true => theme.colorScheme.primary,
+      false => theme.colorScheme.error,
       null => Colors.transparent,
     };
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.calculate_outlined,
-            size: 48, color: theme.colorScheme.primary),
+        Icon(
+          Icons.calculate_outlined,
+          size: 48,
+          color: theme.colorScheme.primary,
+        ),
         const SizedBox(height: 16),
-        Text('Solve to continue',
-            style: theme.textTheme.titleLarge
-                ?.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+        Text(
+          'Solve to continue',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           'Problem ${_currentProblem + 1} of ${widget.totalProblems}',
-          style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 8),
         // Progress dots
@@ -125,11 +134,12 @@ class _FrictionMathState extends State<FrictionMath> {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: i < _currentProblem
-                    ? Colors.green
-                    : i == _currentProblem
-                        ? Colors.white
-                        : Colors.white24,
+                color:
+                    i < _currentProblem
+                        ? theme.colorScheme.primary
+                        : i == _currentProblem
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurface.withAlpha(61),
               ),
             );
           }),
@@ -140,16 +150,14 @@ class _FrictionMathState extends State<FrictionMath> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: theme.colorScheme.onSurface.withAlpha(26),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor, width: 2),
           ),
           child: Text(
             '$_a $op $_b = ?',
-            style: const TextStyle(
-              fontSize: 36,
+            style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
               letterSpacing: 4,
             ),
           ),
@@ -163,32 +171,34 @@ class _FrictionMathState extends State<FrictionMath> {
             focusNode: _focusNode,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 28, color: Colors.white, fontWeight: FontWeight.w600),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(4),
             ],
             decoration: InputDecoration(
               hintText: '???',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+              hintStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withAlpha(77),
+              ),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.1),
+              fillColor: theme.colorScheme.onSurface.withAlpha(26),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             onSubmitted: (_) => _submit(),
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Submit'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Submit')),
       ],
     );
   }

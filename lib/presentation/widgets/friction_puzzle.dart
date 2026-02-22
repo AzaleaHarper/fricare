@@ -29,10 +29,7 @@ class _FrictionPuzzleState extends State<FrictionPuzzle> {
   }
 
   void _generateSequence() {
-    _sequence = List.generate(
-      widget.targetTaps,
-      (_) => _random.nextInt(9),
-    );
+    _sequence = List.generate(widget.targetTaps, (_) => _random.nextInt(9));
     _currentIndex = 0;
     _wrongTap = null;
   }
@@ -60,9 +57,8 @@ class _FrictionPuzzleState extends State<FrictionPuzzle> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final nextTarget = _currentIndex < _sequence.length
-        ? _sequence[_currentIndex]
-        : null;
+    final nextTarget =
+        _currentIndex < _sequence.length ? _sequence[_currentIndex] : null;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -71,7 +67,9 @@ class _FrictionPuzzleState extends State<FrictionPuzzle> {
         const SizedBox(height: 8),
         Text(
           'Tap the highlighted tiles in order ($_currentIndex/${_sequence.length})',
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -94,13 +92,13 @@ class _FrictionPuzzleState extends State<FrictionPuzzle> {
 
               Color tileColor;
               if (isWrong) {
-                tileColor = Colors.red.shade300;
+                tileColor = theme.colorScheme.error;
               } else if (isTarget) {
                 tileColor = theme.colorScheme.primary;
               } else if (isCompleted) {
-                tileColor = Colors.green.shade200;
+                tileColor = theme.colorScheme.primaryContainer;
               } else {
-                tileColor = Colors.grey.shade300;
+                tileColor = theme.colorScheme.surfaceContainerHighest;
               }
 
               return GestureDetector(
@@ -112,10 +110,13 @@ class _FrictionPuzzleState extends State<FrictionPuzzle> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: isTarget
-                        ? Icon(Icons.touch_app,
-                            color: Colors.white.withValues(alpha: 0.8))
-                        : null,
+                    child:
+                        isTarget
+                            ? Icon(
+                              Icons.touch_app,
+                              color: theme.colorScheme.onPrimary,
+                            )
+                            : null,
                   ),
                 ),
               );
