@@ -1,0 +1,8 @@
+Initial release of Fricare - Friction Designer.
+
+- Hold to Open, Tap Puzzle, Math Challenge, and Confirmation friction types
+- Challenge chaining to combine multiple friction types
+- Dynamic modes: Always, After N Opens, Escalating
+- Per-app configuration with adjustable parameters
+- Auto-starts on boot
+- No internet required

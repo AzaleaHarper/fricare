@@ -24,13 +24,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate fastlane metadata structure
+      - name: Validate F-Droid requirements
         run: |
+          echo "Checking license..."
+          test -f LICENSE
+          head -1 LICENSE | grep -q "GNU GENERAL PUBLIC LICENSE"
           echo "Checking F-Droid metadata files..."
           test -f fastlane/metadata/android/en-US/full_description.txt
           test -f fastlane/metadata/android/en-US/short_description.txt
           test -f fastlane/metadata/android/en-US/title.txt
-          echo "All required metadata files present."
+          echo "All requirements met."
 
       - name: Validate build reproducibility
         uses: actions/setup-java@v4

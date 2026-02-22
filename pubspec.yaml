@@ -2,6 +2,8 @@ name: fricare
 description: Friction Designer – intentional app-launch friction to reduce compulsive usage.
 publish_to: 'none'
 version: 0.1.0+1
+repository: https://github.com/AzaleaHarper/fricare
+issue_tracker: https://github.com/AzaleaHarper/fricare/issues
 
 environment:
   sdk: ^3.7.0

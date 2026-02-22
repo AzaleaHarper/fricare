@@ -102,4 +102,4 @@ APK releases are available on the [Releases](../../releases) page.
 
 ## License
 
-This project is proprietary software. All rights reserved.
+Fricare is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
