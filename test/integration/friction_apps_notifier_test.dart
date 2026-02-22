@@ -127,28 +127,18 @@ void main() {
     container.dispose();
   });
 
-  test(
-    'updateFrictionConfig() can change kind and mode simultaneously',
-    () async {
-      repo.seedApps([sampleApp(packageName: 'com.a')]);
-      final container = createTestContainer(repo: repo);
-      final notifier = container.read(frictionAppsProvider.notifier);
+  test('updateFrictionConfig() can change kind', () async {
+    repo.seedApps([sampleApp(packageName: 'com.a')]);
+    final container = createTestContainer(repo: repo);
+    final notifier = container.read(frictionAppsProvider.notifier);
 
-      await notifier.updateFrictionConfig(
-        'com.a',
-        kind: FrictionKind.puzzle,
-        mode: FrictionMode.afterOpens,
-        openThreshold: 5,
-      );
+    await notifier.updateFrictionConfig('com.a', kind: FrictionKind.puzzle);
 
-      final cfg = container.read(frictionAppsProvider).first.frictionConfig;
-      expect(cfg.kind, FrictionKind.puzzle);
-      expect(cfg.mode, FrictionMode.afterOpens);
-      expect(cfg.openThreshold, 5);
+    final cfg = container.read(frictionAppsProvider).first.frictionConfig;
+    expect(cfg.kind, FrictionKind.puzzle);
 
-      container.dispose();
-    },
-  );
+    container.dispose();
+  });
 
   test('updateFrictionConfig() sets chain steps', () async {
     repo.seedApps([sampleApp(packageName: 'com.a')]);

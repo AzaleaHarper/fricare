@@ -172,7 +172,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                   color:
                       settings.globalEnabled
                           ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                          : Colors.grey.shade300,
+                          : theme.colorScheme.outlineVariant,
                 ),
               ),
               child: SwitchListTile(
@@ -181,7 +181,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                   color:
                       settings.globalEnabled
                           ? theme.colorScheme.primary
-                          : Colors.grey,
+                          : theme.colorScheme.outline,
                 ),
                 title: Text(
                   settings.globalEnabled
@@ -192,7 +192,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                     color:
                         settings.globalEnabled
                             ? theme.colorScheme.primary
-                            : Colors.grey.shade700,
+                            : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 subtitle: Text(
@@ -220,20 +220,20 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                   Icon(
                     Icons.shield_outlined,
                     size: 64,
-                    color: Colors.grey.shade300,
+                    color: theme.colorScheme.outlineVariant,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No apps protected yet',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.grey,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Go to Browse to add friction to apps',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -247,7 +247,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
               child: Text(
                 '${frictionApps.length} app${frictionApps.length == 1 ? '' : 's'} protected',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -320,7 +320,7 @@ class _ProtectedAppTile extends StatelessWidget {
       leading:
           icon != null && icon!.isNotEmpty
               ? Image.memory(icon!, width: 36, height: 36)
-              : const Icon(Icons.android, size: 36, color: Colors.grey),
+              : Icon(Icons.android, size: 36, color: theme.colorScheme.outline),
       title: Text(
         appName,
         style: enabled ? null : TextStyle(color: theme.disabledColor),
@@ -333,8 +333,6 @@ class _ProtectedAppTile extends StatelessWidget {
                     ? _ChainChip(config.chainSteps)
                     : _KindChip(config.kind),
           ),
-          const SizedBox(width: 6),
-          _ModeChip(config),
         ],
       ),
       trailing: Row(
@@ -343,7 +341,7 @@ class _ProtectedAppTile extends StatelessWidget {
           Switch(value: enabled, onChanged: onToggleEnabled),
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 20),
-            color: Colors.grey,
+            color: theme.colorScheme.outline,
             onPressed: onRemove,
             tooltip: 'Remove',
           ),
@@ -393,30 +391,6 @@ class _ChainChip extends StatelessWidget {
     return Chip(
       avatar: const Icon(Icons.link, size: 12),
       label: Text(label, style: const TextStyle(fontSize: 11)),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  final FrictionConfig config;
-  const _ModeChip(this.config);
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (config.mode) {
-      FrictionMode.always => ('Always', Colors.blue),
-      FrictionMode.afterOpens => (
-        'After ${config.openThreshold} opens',
-        Colors.orange,
-      ),
-      FrictionMode.escalating => ('Escalating', Colors.purple),
-    };
-    return Chip(
-      label: Text(label, style: TextStyle(fontSize: 11, color: color.shade700)),
-      backgroundColor: color.shade50,
-      side: BorderSide(color: color.shade200),
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
     );

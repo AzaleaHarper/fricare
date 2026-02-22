@@ -96,8 +96,6 @@ FrictionConfig sampleConfig({
   int puzzleTaps = 5,
   int mathProblems = 3,
   int confirmationSteps = 2,
-  FrictionMode mode = FrictionMode.always,
-  int openThreshold = 3,
   List<ChainStep>? chainSteps,
 }) {
   return FrictionConfig(
@@ -106,8 +104,6 @@ FrictionConfig sampleConfig({
     puzzleTaps: puzzleTaps,
     mathProblems: mathProblems,
     confirmationSteps: confirmationSteps,
-    mode: mode,
-    openThreshold: openThreshold,
     chainSteps: chainSteps,
   );
 }

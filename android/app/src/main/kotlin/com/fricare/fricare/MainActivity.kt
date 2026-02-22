@@ -35,6 +35,15 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_ARG", "json required", null)
                         }
                     }
+                    "syncTheme" -> {
+                        getSharedPreferences(AppLaunchDetectorService.PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit()
+                            .putInt("theme_mode_index", call.argument<Int>("themeModeIndex") ?: 0)
+                            .putInt("accent_color_index", call.argument<Int>("accentColorIndex") ?: 0)
+                            .putBoolean("amoled_dark", call.argument<Boolean>("amoledDark") ?: false)
+                            .apply()
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

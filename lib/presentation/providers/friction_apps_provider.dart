@@ -100,10 +100,8 @@ class FrictionAppsNotifier extends Notifier<List<FrictionApp>> {
     int? confirmationSteps,
     int? puzzleTaps,
     int? mathProblems,
-    FrictionMode? mode,
-    int? openThreshold,
-    List<EscalationStep>? escalationSteps,
     List<ChainStep>? chainSteps,
+    int? cooldownMinutes,
   }) async {
     final repo = ref.read(repositoryProvider);
     final app = repo.getByPackage(packageName);
@@ -116,10 +114,8 @@ class FrictionAppsNotifier extends Notifier<List<FrictionApp>> {
       confirmationSteps: confirmationSteps,
       puzzleTaps: puzzleTaps,
       mathProblems: mathProblems,
-      mode: mode,
-      openThreshold: openThreshold,
-      escalationSteps: escalationSteps,
       chainSteps: chainSteps,
+      cooldownMinutes: cooldownMinutes,
     );
     await repo.save(app);
     state = repo.getAll();

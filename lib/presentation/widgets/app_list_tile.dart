@@ -11,7 +11,6 @@ class AppListTile extends StatelessWidget {
   final bool isSelected;
   final bool? frictionEnabled;
   final FrictionKind? frictionKind;
-  final FrictionMode? frictionMode;
   final ValueChanged<bool> onToggle;
   final VoidCallback? onTap;
 
@@ -23,7 +22,6 @@ class AppListTile extends StatelessWidget {
     required this.isSelected,
     this.frictionEnabled,
     this.frictionKind,
-    this.frictionMode,
     required this.onToggle,
     this.onTap,
   });
@@ -48,51 +46,39 @@ class AppListTile extends StatelessWidget {
         appName,
         style: isDisabled ? TextStyle(color: theme.disabledColor) : null,
       ),
-      trailing: isSelected && frictionKind != null
-          ? Wrap(
-              spacing: 4,
-              children: [
-                Chip(
-                  label: Text(_kindLabel(frictionKind!),
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: isDisabled ? theme.disabledColor : null)),
-                  avatar: isDisabled
-                      ? Icon(Icons.pause_circle_outline,
-                          size: 12, color: theme.disabledColor)
-                      : null,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                ),
-                if (frictionMode != null && frictionMode != FrictionMode.always)
-                  Chip(
-                    label: Text(_modeLabel(frictionMode!),
-                        style: const TextStyle(fontSize: 10)),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.secondaryContainer,
+      trailing:
+          isSelected && frictionKind != null
+              ? Chip(
+                label: Text(
+                  _kindLabel(frictionKind!),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDisabled ? theme.disabledColor : null,
                   ),
-              ],
-            )
-          : null,
+                ),
+                avatar:
+                    isDisabled
+                        ? Icon(
+                          Icons.pause_circle_outline,
+                          size: 12,
+                          color: theme.disabledColor,
+                        )
+                        : null,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+              )
+              : null,
       onTap: onTap,
     );
   }
 
   String _kindLabel(FrictionKind kind) => switch (kind) {
-        FrictionKind.holdToOpen => 'Hold',
-        FrictionKind.puzzle => 'Puzzle',
-        FrictionKind.confirmation => 'Confirm',
-        FrictionKind.math => 'Math',
-        FrictionKind.none => 'None',
-      };
-
-  String _modeLabel(FrictionMode mode) => switch (mode) {
-        FrictionMode.always => 'Always',
-        FrictionMode.afterOpens => 'Threshold',
-        FrictionMode.escalating => 'Escalating',
-      };
+    FrictionKind.holdToOpen => 'Hold',
+    FrictionKind.puzzle => 'Puzzle',
+    FrictionKind.confirmation => 'Confirm',
+    FrictionKind.math => 'Math',
+    FrictionKind.none => 'None',
+  };
 }
 
 class _AppIcon extends StatelessWidget {
@@ -105,6 +91,10 @@ class _AppIcon extends StatelessWidget {
     if (icon != null && icon!.isNotEmpty) {
       return Image.memory(icon!, width: size, height: size);
     }
-    return Icon(Icons.android, size: size, color: Colors.grey);
+    return Icon(
+      Icons.android,
+      size: size,
+      color: Theme.of(context).colorScheme.outline,
+    );
   }
 }

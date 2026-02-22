@@ -55,87 +55,6 @@ class FrictionKindAdapter extends TypeAdapter<FrictionKind> {
           typeId == other.typeId;
 }
 
-class FrictionModeAdapter extends TypeAdapter<FrictionMode> {
-  @override
-  final int typeId = 4;
-
-  @override
-  FrictionMode read(BinaryReader reader) {
-    switch (reader.readByte()) {
-      case 0:
-        return FrictionMode.always;
-      case 1:
-        return FrictionMode.afterOpens;
-      case 2:
-        return FrictionMode.escalating;
-      default:
-        return FrictionMode.always;
-    }
-  }
-
-  @override
-  void write(BinaryWriter writer, FrictionMode obj) {
-    switch (obj) {
-      case FrictionMode.always:
-        writer.writeByte(0);
-      case FrictionMode.afterOpens:
-        writer.writeByte(1);
-      case FrictionMode.escalating:
-        writer.writeByte(2);
-    }
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FrictionModeAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class EscalationStepAdapter extends TypeAdapter<EscalationStep> {
-  @override
-  final int typeId = 5;
-
-  @override
-  EscalationStep read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return EscalationStep(
-      fromOpen: fields[0] as int,
-      kind: fields[1] as FrictionKind,
-      delaySeconds: fields[2] as int,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, EscalationStep obj) {
-    writer
-      ..writeByte(3)
-      ..writeByte(0)
-      ..write(obj.fromOpen)
-      ..writeByte(1)
-      ..write(obj.kind)
-      ..writeByte(2)
-      ..write(obj.delaySeconds);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is EscalationStepAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
 class ChainStepAdapter extends TypeAdapter<ChainStep> {
   @override
   final int typeId = 6;
@@ -197,27 +116,22 @@ class FrictionConfigAdapter extends TypeAdapter<FrictionConfig> {
       delaySeconds: fields[1] as int,
       randomize: fields[2] as bool,
       confirmationSteps: fields[3] as int,
-      // New fields — fall back to defaults when reading old data.
-      mode: fields.containsKey(4)
-          ? fields[4] as FrictionMode
-          : FrictionMode.always,
-      openThreshold: fields.containsKey(5) ? fields[5] as int : 3,
-      escalationSteps: fields.containsKey(6)
-          ? (fields[6] as List).cast<EscalationStep>()
-          : null,
+      // Fields 4-6 (mode, openThreshold, escalationSteps) removed — ignored.
       randomizeRange: fields.containsKey(7) ? fields[7] as int : 2,
       puzzleTaps: fields.containsKey(8) ? fields[8] as int : 5,
       mathProblems: fields.containsKey(9) ? fields[9] as int : 3,
-      chainSteps: fields.containsKey(10)
-          ? (fields[10] as List).cast<ChainStep>()
-          : null,
+      chainSteps:
+          fields.containsKey(10)
+              ? (fields[10] as List).cast<ChainStep>()
+              : null,
+      cooldownMinutes: fields.containsKey(11) ? fields[11] as int : 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, FrictionConfig obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.kind)
       ..writeByte(1)
@@ -226,12 +140,6 @@ class FrictionConfigAdapter extends TypeAdapter<FrictionConfig> {
       ..write(obj.randomize)
       ..writeByte(3)
       ..write(obj.confirmationSteps)
-      ..writeByte(4)
-      ..write(obj.mode)
-      ..writeByte(5)
-      ..write(obj.openThreshold)
-      ..writeByte(6)
-      ..write(obj.escalationSteps)
       ..writeByte(7)
       ..write(obj.randomizeRange)
       ..writeByte(8)
@@ -239,7 +147,9 @@ class FrictionConfigAdapter extends TypeAdapter<FrictionConfig> {
       ..writeByte(9)
       ..write(obj.mathProblems)
       ..writeByte(10)
-      ..write(obj.chainSteps);
+      ..write(obj.chainSteps)
+      ..writeByte(11)
+      ..write(obj.cooldownMinutes);
   }
 
   @override

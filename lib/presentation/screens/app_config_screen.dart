@@ -40,45 +40,16 @@ class AppConfigScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // ── Friction type ──────────────────────────────────────────
-          const _SectionHeader('Friction Type'),
-          const SizedBox(height: 8),
-          RadioGroup<FrictionKind>(
-            groupValue: config.kind,
-            onChanged:
-                (v) => notifier.updateFrictionConfig(packageName, kind: v),
-            child: Column(
-              children:
-                  [
-                        FrictionKind.holdToOpen,
-                        FrictionKind.puzzle,
-                        FrictionKind.confirmation,
-                        FrictionKind.math,
-                      ]
-                      .map(
-                        (k) => RadioListTile<FrictionKind>(
-                          title: Text(_kindLabel(k)),
-                          subtitle: Text(_kindDesc(k)),
-                          value: k,
-                        ),
-                      )
-                      .toList(),
-            ),
+          // ── Friction steps ─────────────────────────────────────────
+          _ChainEditor(
+            steps: _stepsFromConfig(config),
+            onStepsChanged: (steps) => _saveSteps(notifier, packageName, steps),
           ),
-          const Divider(),
 
-          // ── Intensity ──────────────────────────────────────────────
-          if (config.kind == FrictionKind.holdToOpen) ...[
-            ValueSlider(
-              label: 'Hold duration',
-              value: config.delaySeconds,
-              onChanged:
-                  (v) => notifier.updateFrictionConfig(
-                    packageName,
-                    delaySeconds: v,
-                  ),
-            ),
-            const SizedBox(height: 8),
+          // Randomize delay (applies to hold-to-open steps)
+          if (_stepsFromConfig(
+            config,
+          ).any((s) => s.kind == FrictionKind.holdToOpen)) ...[
             SwitchListTile(
               title: const Text('Randomize delay'),
               subtitle: Text(
@@ -105,139 +76,56 @@ class AppConfigScreen extends ConsumerWidget {
                     ),
               ),
           ],
-          if (config.kind == FrictionKind.puzzle) ...[
-            ValueSlider(
-              label: 'Number of taps',
-              suffix: '',
-              value: config.puzzleTaps,
-              min: 3,
-              max: 12,
-              onChanged:
-                  (v) =>
-                      notifier.updateFrictionConfig(packageName, puzzleTaps: v),
-            ),
-          ],
-          if (config.kind == FrictionKind.confirmation) ...[
-            const _SectionHeader('Confirmation Steps'),
-            Slider(
-              value: config.confirmationSteps.toDouble(),
-              min: 1,
-              max: 3,
-              divisions: 2,
-              label:
-                  '${config.confirmationSteps} step${config.confirmationSteps > 1 ? 's' : ''}',
-              onChanged:
-                  (v) => notifier.updateFrictionConfig(
-                    packageName,
-                    confirmationSteps: v.round(),
-                  ),
-            ),
-          ],
-          if (config.kind == FrictionKind.math) ...[
-            ValueSlider(
-              label: 'Problems to solve',
-              suffix: '',
-              value: config.mathProblems,
-              min: 1,
-              max: 5,
-              onChanged:
-                  (v) => notifier.updateFrictionConfig(
-                    packageName,
-                    mathProblems: v,
-                  ),
-            ),
-          ],
           const Divider(),
 
-          // ── When to apply ──────────────────────────────────────────
-          const _SectionHeader('When to Apply'),
+          // ── Apply friction every ──────────────────────────────────────
+          const _SectionHeader('Apply Friction'),
           const SizedBox(height: 8),
-          RadioGroup<FrictionMode>(
-            groupValue: config.mode,
-            onChanged:
-                (v) => notifier.updateFrictionConfig(packageName, mode: v),
-            child: Column(
-              children:
-                  FrictionMode.values
-                      .map(
-                        (m) => RadioListTile<FrictionMode>(
-                          title: Text(_modeLabel(m)),
-                          subtitle: Text(_modeDesc(m)),
-                          value: m,
-                        ),
-                      )
-                      .toList(),
-            ),
-          ),
-
-          // Free opens threshold (only for afterOpens mode)
-          if (config.mode == FrictionMode.afterOpens) ...[
-            const SizedBox(height: 4),
-            _SectionHeader('Free Opens Per Day: ${config.openThreshold}'),
-            Slider(
-              value: config.openThreshold.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              label: '${config.openThreshold}',
-              onChanged:
-                  (v) => notifier.updateFrictionConfig(
-                    packageName,
-                    openThreshold: v.round(),
-                  ),
-            ),
-          ],
-
-          // Escalation tier editor (only for escalating mode)
-          if (config.mode == FrictionMode.escalating) ...[
-            const SizedBox(height: 8),
-            _EscalationEditor(
-              steps: config.escalationSteps,
-              onStepsChanged:
-                  (steps) => notifier.updateFrictionConfig(
-                    packageName,
-                    escalationSteps: steps,
-                  ),
-            ),
-          ],
-
-          const Divider(),
-
-          // ── Challenge chain ─────────────────────────────────────────
-          const _SectionHeader('Challenge Chain'),
-          const SizedBox(height: 4),
-          SwitchListTile(
-            title: const Text('Enable chain mode'),
-            subtitle: const Text('Run multiple challenges in sequence'),
-            value: config.chainSteps.isNotEmpty,
+          RadioGroup<int>(
+            groupValue: config.cooldownMinutes == 0 ? 0 : 1,
             onChanged: (v) {
-              if (v) {
+              if (v == 0) {
+                notifier.updateFrictionConfig(packageName, cooldownMinutes: 0);
+              } else {
                 notifier.updateFrictionConfig(
                   packageName,
-                  chainSteps: [
-                    ChainStep(
-                      kind: config.kind,
-                      delaySeconds: config.delaySeconds,
-                      puzzleTaps: config.puzzleTaps,
-                      confirmationSteps: config.confirmationSteps,
-                      mathProblems: config.mathProblems,
-                    ),
-                  ],
+                  cooldownMinutes:
+                      config.cooldownMinutes > 0 ? config.cooldownMinutes : 5,
                 );
-              } else {
-                notifier.updateFrictionConfig(packageName, chainSteps: []);
               }
             },
+            child: const Column(
+              children: [
+                RadioListTile<int>(
+                  title: Text('Every open'),
+                  subtitle: Text('Friction each time you switch to this app'),
+                  value: 0,
+                ),
+                RadioListTile<int>(
+                  title: Text('On a timer'),
+                  subtitle: Text(
+                    'Free access for a set period after completing friction',
+                  ),
+                  value: 1,
+                ),
+              ],
+            ),
           ),
-          if (config.chainSteps.isNotEmpty)
-            _ChainEditor(
-              steps: config.chainSteps,
-              onStepsChanged:
-                  (steps) => notifier.updateFrictionConfig(
+          if (config.cooldownMinutes > 0) ...[
+            const SizedBox(height: 4),
+            ValueSlider(
+              label: 'Cooldown',
+              suffix: 'min',
+              value: config.cooldownMinutes,
+              min: 1,
+              max: 120,
+              onChanged:
+                  (v) => notifier.updateFrictionConfig(
                     packageName,
-                    chainSteps: steps,
+                    cooldownMinutes: v,
                   ),
             ),
+          ],
 
           const SizedBox(height: 24),
 
@@ -262,244 +150,38 @@ class AppConfigScreen extends ConsumerWidget {
     );
   }
 
-  String _kindLabel(FrictionKind k) => switch (k) {
-    FrictionKind.holdToOpen => 'Hold to Open',
-    FrictionKind.puzzle => 'Tap Sequence',
-    FrictionKind.confirmation => 'Multi-Step Confirmation',
-    FrictionKind.math => 'Math Challenge',
-    FrictionKind.none => 'None',
-  };
-
-  String _kindDesc(FrictionKind k) => switch (k) {
-    FrictionKind.holdToOpen => 'Hold a button for the configured delay',
-    FrictionKind.puzzle => 'Complete a tap-sequence grid puzzle',
-    FrictionKind.confirmation => 'Tap through "Are you sure?" screens',
-    FrictionKind.math => 'Solve arithmetic problems to proceed',
-    FrictionKind.none => 'No friction',
-  };
-
-  String _modeLabel(FrictionMode m) => switch (m) {
-    FrictionMode.always => 'Always',
-    FrictionMode.afterOpens => 'After free opens',
-    FrictionMode.escalating => 'Escalating',
-  };
-
-  String _modeDesc(FrictionMode m) => switch (m) {
-    FrictionMode.always => 'Apply friction every time',
-    FrictionMode.afterOpens =>
-      'First N opens per day are free, then friction starts',
-    FrictionMode.escalating => 'Friction intensifies with each open today',
-  };
-}
-
-// ── Escalation tier editor ───────────────────────────────────────────────────
-
-class _EscalationEditor extends StatelessWidget {
-  final List<EscalationStep> steps;
-  final ValueChanged<List<EscalationStep>> onStepsChanged;
-
-  const _EscalationEditor({required this.steps, required this.onStepsChanged});
-
-  void _updateStep(int index, EscalationStep updated) {
-    final next = [...steps];
-    next[index] = updated;
-    onStepsChanged(next);
+  static List<ChainStep> _stepsFromConfig(FrictionConfig config) {
+    if (config.chainSteps.isNotEmpty) return config.chainSteps;
+    return [
+      ChainStep(
+        kind: config.kind,
+        delaySeconds: config.delaySeconds,
+        puzzleTaps: config.puzzleTaps,
+        confirmationSteps: config.confirmationSteps,
+        mathProblems: config.mathProblems,
+      ),
+    ];
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.trending_up, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'Escalation Tiers',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed:
-                      () => onStepsChanged(
-                        EscalationStep.defaultsFor(FrictionKind.holdToOpen),
-                      ),
-                  child: const Text('Reset', style: TextStyle(fontSize: 12)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Define what friction level applies at each open count today.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...steps.asMap().entries.map((entry) {
-              final i = entry.key;
-              final step = entry.value;
-              return _TierRow(
-                step: step,
-                isFirst: i == 0,
-                nextFromOpen:
-                    i + 1 < steps.length ? steps[i + 1].fromOpen : null,
-                onKindChanged: (k) => _updateStep(i, step.copyWith(kind: k)),
-                onFromOpenChanged:
-                    (v) => _updateStep(i, step.copyWith(fromOpen: v)),
-                onDelayChanged:
-                    (v) => _updateStep(i, step.copyWith(delaySeconds: v)),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TierRow extends StatelessWidget {
-  final EscalationStep step;
-  final bool isFirst;
-  final int? nextFromOpen;
-  final ValueChanged<FrictionKind> onKindChanged;
-  final ValueChanged<int> onFromOpenChanged;
-  final ValueChanged<int> onDelayChanged;
-
-  const _TierRow({
-    required this.step,
-    required this.isFirst,
-    this.nextFromOpen,
-    required this.onKindChanged,
-    required this.onFromOpenChanged,
-    required this.onDelayChanged,
-  });
-
-  static const _kindLabels = {
-    FrictionKind.none: 'No friction',
-    FrictionKind.holdToOpen: 'Hold',
-    FrictionKind.puzzle: 'Puzzle',
-    FrictionKind.confirmation: 'Confirm',
-    FrictionKind.math: 'Math',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final rangeLabel =
-        nextFromOpen != null
-            ? 'Opens ${step.fromOpen}–${nextFromOpen! - 1}'
-            : 'Opens ${step.fromOpen}+';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Vertical line + dot
-          Column(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              if (nextFromOpen != null)
-                Container(width: 2, height: 48, color: Colors.grey.shade300),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Range label + from-open stepper (not shown for first tier)
-                Row(
-                  children: [
-                    Text(
-                      rangeLabel,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (!isFirst) ...[
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.remove, size: 16),
-                        onPressed:
-                            step.fromOpen > 2
-                                ? () => onFromOpenChanged(step.fromOpen - 1)
-                                : null,
-                      ),
-                      Text('${step.fromOpen}'),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.add, size: 16),
-                        onPressed:
-                            (nextFromOpen == null ||
-                                    step.fromOpen < nextFromOpen! - 1)
-                                ? () => onFromOpenChanged(step.fromOpen + 1)
-                                : null,
-                      ),
-                    ],
-                  ],
-                ),
-                // Kind selector
-                DropdownButtonFormField<FrictionKind>(
-                  initialValue: step.kind,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    border: OutlineInputBorder(),
-                  ),
-                  items:
-                      FrictionKind.values
-                          .map(
-                            (k) => DropdownMenuItem(
-                              value: k,
-                              child: Text(_kindLabels[k]!),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (v) {
-                    if (v != null) onKindChanged(v);
-                  },
-                ),
-                // Delay (only if hold-to-open)
-                if (step.kind == FrictionKind.holdToOpen) ...[
-                  const SizedBox(height: 4),
-                  ValueSlider(
-                    label: 'Delay',
-                    value: step.delaySeconds,
-                    onChanged: onDelayChanged,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  static void _saveSteps(
+    FrictionAppsNotifier notifier,
+    String packageName,
+    List<ChainStep> steps,
+  ) {
+    if (steps.length == 1) {
+      final s = steps.first;
+      notifier.updateFrictionConfig(
+        packageName,
+        kind: s.kind,
+        delaySeconds: s.delaySeconds,
+        puzzleTaps: s.puzzleTaps,
+        confirmationSteps: s.confirmationSteps,
+        mathProblems: s.mathProblems,
+        chainSteps: [],
+      );
+    } else {
+      notifier.updateFrictionConfig(packageName, chainSteps: steps);
+    }
   }
 }
 
@@ -540,7 +222,7 @@ class _ChainEditor extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -549,10 +231,10 @@ class _ChainEditor extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.link, size: 18),
+                Icon(steps.length > 1 ? Icons.link : Icons.layers, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'Chain Steps',
+                  steps.length > 1 ? 'Friction Chain' : 'Friction',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -561,9 +243,11 @@ class _ChainEditor extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Complete each challenge in order to proceed.',
+              steps.length > 1
+                  ? 'Complete each challenge in order to proceed.'
+                  : 'Configure your friction challenge.',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 12),
@@ -649,8 +333,8 @@ class _ChainStepRow extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '${index + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -658,7 +342,11 @@ class _ChainStepRow extends StatelessWidget {
                 ),
               ),
               if (!isLast)
-                Container(width: 2, height: 40, color: Colors.grey.shade300),
+                Container(
+                  width: 2,
+                  height: 40,
+                  color: theme.colorScheme.outlineVariant,
+                ),
             ],
           ),
           const SizedBox(width: 12),
@@ -699,7 +387,7 @@ class _ChainStepRow extends StatelessWidget {
                         icon: Icon(
                           Icons.delete_outline,
                           size: 18,
-                          color: Colors.grey.shade500,
+                          color: theme.colorScheme.outline,
                         ),
                         onPressed: onDelete,
                       ),
@@ -764,9 +452,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-    );
+    final theme = Theme.of(context);
+    return Text(text, style: theme.textTheme.titleMedium);
   }
 }

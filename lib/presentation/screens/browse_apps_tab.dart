@@ -51,13 +51,16 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error loading apps: $err')),
       data: (apps) {
-        final filtered = _query.isEmpty
-            ? apps
-            : apps
-                .where((a) =>
-                    a.appName.toLowerCase().contains(_query) ||
-                    a.packageName.toLowerCase().contains(_query))
-                .toList();
+        final filtered =
+            _query.isEmpty
+                ? apps
+                : apps
+                    .where(
+                      (a) =>
+                          a.appName.toLowerCase().contains(_query) ||
+                          a.packageName.toLowerCase().contains(_query),
+                    )
+                    .toList();
 
         return CustomScrollView(
           slivers: [
@@ -69,14 +72,15 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                   controller: _searchController,
                   hintText: 'Search apps…',
                   leading: const Icon(Icons.search, size: 20),
-                  trailing: _query.isNotEmpty
-                      ? [
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => _searchController.clear(),
-                          )
-                        ]
-                      : null,
+                  trailing:
+                      _query.isNotEmpty
+                          ? [
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => _searchController.clear(),
+                            ),
+                          ]
+                          : null,
                   padding: const WidgetStatePropertyAll(
                     EdgeInsets.symmetric(horizontal: 12),
                   ),
@@ -93,10 +97,11 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                   filtered.isEmpty
                       ? 'No apps found'
                       : _query.isEmpty
-                          ? '${filtered.length} apps installed'
-                          : '${filtered.length} result${filtered.length == 1 ? '' : 's'} for "$_query"',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: Colors.grey.shade600),
+                      ? '${filtered.length} apps installed'
+                      : '${filtered.length} result${filtered.length == 1 ? '' : 's'} for "$_query"',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
@@ -106,9 +111,10 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final app = filtered[index];
-                final frictionApp = frictionApps
-                    .where((a) => a.packageName == app.packageName)
-                    .firstOrNull;
+                final frictionApp =
+                    frictionApps
+                        .where((a) => a.packageName == app.packageName)
+                        .firstOrNull;
                 final isSelected = frictionApp != null;
 
                 return AppListTile(
@@ -118,7 +124,6 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                   isSelected: isSelected,
                   frictionEnabled: frictionApp?.enabled,
                   frictionKind: frictionApp?.frictionConfig.kind,
-                  frictionMode: frictionApp?.frictionConfig.mode,
                   onToggle: (selected) {
                     if (selected) {
                       _onAppChecked(app.packageName, app.appName);
@@ -128,16 +133,18 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                           .removeApp(app.packageName);
                     }
                   },
-                  onTap: isSelected
-                      ? () => Navigator.push(
+                  onTap:
+                      isSelected
+                          ? () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AppConfigScreen(
-                                packageName: app.packageName,
-                              ),
+                              builder:
+                                  (_) => AppConfigScreen(
+                                    packageName: app.packageName,
+                                  ),
                             ),
                           )
-                      : null,
+                          : null,
                 );
               },
             ),

@@ -5,18 +5,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fricare/domain/models/friction_type.dart';
 import 'package:fricare/overlay/overlay_main.dart';
+import 'package:fricare/presentation/theme/app_theme.dart';
 import 'package:fricare/presentation/widgets/friction_confirmation.dart';
 import 'package:fricare/presentation/widgets/friction_hold_button.dart';
 import 'package:fricare/presentation/widgets/friction_math.dart';
 
 void main() {
+  const channel = MethodChannel('com.fricare/overlay');
   late Map<String, dynamic> configResponse;
   late List<String> invokedMethods;
 
   setUp(() {
     invokedMethods = [];
     configResponse = {
-      'kind': 0,
+      'kind': 1, // holdToOpen
       'delaySeconds': 3,
       'confirmationSteps': 2,
       'puzzleTaps': 5,
@@ -24,53 +26,57 @@ void main() {
       'chainStepsJson': '[]',
       'appName': 'TestApp',
       'packageName': 'com.test',
+      'accentColorIndex': 0,
+      'amoledDark': false,
     };
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('com.fricare/overlay'), (
-          call,
-        ) async {
+        .setMockMethodCallHandler(channel, (call) async {
           invokedMethods.add(call.method);
-          if (call.method == 'getFrictionConfig') {
-            return configResponse;
-          }
           return null;
         });
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('com.fricare/overlay'),
-          null,
-        );
+        .setMockMethodCallHandler(channel, null);
   });
 
-  testWidgets('loads config and renders hold button for kind 0', (
-    tester,
+  /// Pump the widget and push config via the showFriction method call.
+  Future<void> pumpAndPushConfig(
+    WidgetTester tester,
+    Map<String, dynamic> config,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
+        theme: buildAppTheme(accentColorIndex: 0, brightness: Brightness.dark),
         home: const OverlayScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
+    // Simulate Kotlin pushing config to Dart
+    final data = const StandardMethodCodec().encodeMethodCall(
+      MethodCall('showFriction', config),
+    );
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      channel.name,
+      data,
+      (_) {},
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('loads config and renders hold button for kind 1', (
+    tester,
+  ) async {
+    await pumpAndPushConfig(tester, configResponse);
     expect(find.byType(FrictionHoldButton), findsOneWidget);
   });
 
   testWidgets('renders math widget for kind 4', (tester) async {
     configResponse['kind'] = 4;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
-        home: const OverlayScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
+    await pumpAndPushConfig(tester, configResponse);
     expect(find.byType(FrictionMath), findsOneWidget);
   });
 
@@ -82,26 +88,14 @@ void main() {
       const ChainStep(kind: FrictionKind.confirmation).toJson(),
     ]);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
-        home: const OverlayScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpAndPushConfig(tester, configResponse);
 
     expect(find.text('Step 1 of 2'), findsOneWidget);
     expect(find.byType(FrictionMath), findsOneWidget);
   });
 
   testWidgets('cancel button calls frictionCancelled', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
-        home: const OverlayScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpAndPushConfig(tester, configResponse);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
@@ -109,34 +103,23 @@ void main() {
     expect(invokedMethods, contains('frictionCancelled'));
   });
 
-  testWidgets('error state shows retry button', (tester) async {
-    // Make channel throw
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('com.fricare/overlay'), (
-          call,
-        ) async {
-          if (call.method == 'getFrictionConfig') {
-            throw PlatformException(code: 'ERROR');
-          }
-          return null;
-        });
-
+  testWidgets('shows empty widget before config is pushed', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
+        theme: buildAppTheme(accentColorIndex: 0, brightness: Brightness.dark),
         home: const OverlayScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.text('Failed to load friction'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    // No friction widget rendered yet
+    expect(find.byType(FrictionHoldButton), findsNothing);
+    expect(find.byType(Scaffold), findsNothing);
   });
 
   testWidgets('chain mode advances to second step after completing first', (
     tester,
   ) async {
-    // Chain: confirmation(1 step) → hold
     configResponse['chainStepsJson'] = jsonEncode([
       const ChainStep(
         kind: FrictionKind.confirmation,
@@ -145,13 +128,7 @@ void main() {
       const ChainStep(kind: FrictionKind.holdToOpen).toJson(),
     ]);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
-        home: const OverlayScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpAndPushConfig(tester, configResponse);
 
     // Step 1: confirmation with 1 step
     expect(find.text('Step 1 of 2'), findsOneWidget);

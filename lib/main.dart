@@ -17,8 +17,6 @@ Future<void> main() async {
   // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(FrictionKindAdapter());
-  Hive.registerAdapter(FrictionModeAdapter());
-  Hive.registerAdapter(EscalationStepAdapter());
   Hive.registerAdapter(ChainStepAdapter());
   Hive.registerAdapter(FrictionConfigAdapter());
   Hive.registerAdapter(FrictionAppAdapter());
@@ -30,9 +28,7 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        repositoryProvider.overrideWithValue(repository),
-      ],
+      overrides: [repositoryProvider.overrideWithValue(repository)],
       child: const FricareApp(),
     ),
   );

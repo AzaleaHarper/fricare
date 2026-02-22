@@ -13,7 +13,7 @@ void main() {
       );
       final json = step.toJson();
 
-      expect(json['kind'], 0); // holdToOpen index
+      expect(json['kind'], 1); // holdToOpen index
       expect(json['delaySeconds'], 5);
       expect(json['puzzleTaps'], 7);
       expect(json['confirmationSteps'], 3);
@@ -22,7 +22,7 @@ void main() {
 
     test('fromJson() deserializes all fields correctly', () {
       final json = {
-        'kind': 1, // puzzle
+        'kind': 2, // puzzle
         'delaySeconds': 10,
         'puzzleTaps': 8,
         'confirmationSteps': 4,
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('fromJson() uses defaults for missing optional fields', () {
-      final step = ChainStep.fromJson({'kind': 2});
+      final step = ChainStep.fromJson({'kind': 3});
 
       expect(step.kind, FrictionKind.confirmation);
       expect(step.delaySeconds, 3);

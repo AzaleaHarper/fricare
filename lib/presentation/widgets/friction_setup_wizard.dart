@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models/friction_type.dart';
 import 'delay_slider.dart' show ValueSlider;
 
-/// Shows a three-step bottom sheet wizard for configuring friction on a new app.
+/// Shows a two-step bottom sheet wizard for configuring friction on a new app.
 /// Returns a [FrictionConfig] on completion, or null if cancelled.
 Future<FrictionConfig?> showFrictionSetupWizard(
   BuildContext context, {
@@ -31,7 +31,7 @@ class _FrictionSetupWizard extends StatefulWidget {
 class _FrictionSetupWizardState extends State<_FrictionSetupWizard> {
   final _pageController = PageController();
   int _currentPage = 0;
-  static const _totalPages = 3;
+  static const _totalPages = 2;
 
   // Step 1 – friction type
   FrictionKind _selectedKind = FrictionKind.holdToOpen;
@@ -41,10 +41,6 @@ class _FrictionSetupWizardState extends State<_FrictionSetupWizard> {
   bool _randomize = false;
   int _randomizeRange = 2;
   int _confirmationSteps = 2;
-
-  // Step 3 – when to apply
-  FrictionMode _mode = FrictionMode.always;
-  int _openThreshold = 3;
 
   @override
   void dispose() {
@@ -62,26 +58,21 @@ class _FrictionSetupWizardState extends State<_FrictionSetupWizard> {
   }
 
   void _confirm() {
-    Navigator.of(context).pop(FrictionConfig(
-      kind: _selectedKind,
-      delaySeconds: _delaySeconds,
-      randomize: _randomize,
-      randomizeRange: _randomizeRange,
-      confirmationSteps: _confirmationSteps,
-      mode: _mode,
-      openThreshold: _openThreshold,
-      escalationSteps: _mode == FrictionMode.escalating
-          ? EscalationStep.defaultsFor(_selectedKind)
-          : null,
-    ));
+    Navigator.of(context).pop(
+      FrictionConfig(
+        kind: _selectedKind,
+        delaySeconds: _delaySeconds,
+        randomize: _randomize,
+        randomizeRange: _randomizeRange,
+        confirmationSteps: _confirmationSteps,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.72,
         child: Column(
@@ -103,7 +94,7 @@ class _FrictionSetupWizardState extends State<_FrictionSetupWizard> {
                     onSelect: (k) => setState(() => _selectedKind = k),
                     onNext: () => _goTo(1),
                   ),
-                  // Step 2: configure intensity
+                  // Step 2: configure intensity + confirm
                   _StepConfigure(
                     kind: _selectedKind,
                     delaySeconds: _delaySeconds,
@@ -112,19 +103,10 @@ class _FrictionSetupWizardState extends State<_FrictionSetupWizard> {
                     confirmationSteps: _confirmationSteps,
                     onDelayChanged: (v) => setState(() => _delaySeconds = v),
                     onRandomizeChanged: (v) => setState(() => _randomize = v),
-                    onRandomizeRangeChanged: (v) =>
-                        setState(() => _randomizeRange = v),
-                    onStepsChanged: (v) =>
-                        setState(() => _confirmationSteps = v),
-                    onNext: () => _goTo(2),
-                  ),
-                  // Step 3: when to apply
-                  _StepWhen(
-                    mode: _mode,
-                    openThreshold: _openThreshold,
-                    onModeChanged: (m) => setState(() => _mode = m),
-                    onThresholdChanged: (v) =>
-                        setState(() => _openThreshold = v),
+                    onRandomizeRangeChanged:
+                        (v) => setState(() => _randomizeRange = v),
+                    onStepsChanged:
+                        (v) => setState(() => _confirmationSteps = v),
                     onConfirm: _confirm,
                   ),
                 ],
@@ -152,7 +134,7 @@ class _WizardHeader extends StatelessWidget {
     this.onBack,
   });
 
-  static const _titles = ['Choose Friction Type', 'Set Intensity', 'When to Apply'];
+  static const _titles = ['Choose Friction Type', 'Set Intensity'];
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +149,7 @@ class _WizardHeader extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -189,20 +171,24 @@ class _WizardHeader extends StatelessWidget {
                   children: [
                     Text(
                       _titles[currentPage.clamp(0, _titles.length - 1)],
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       appName,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: Colors.grey),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
               Text(
                 '${currentPage + 1} / $totalPages',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -213,8 +199,7 @@ class _WizardHeader extends StatelessWidget {
               const SizedBox(width: 8),
               for (int i = 0; i < totalPages; i++) ...[
                 _StepDot(active: currentPage == i, done: currentPage > i),
-                if (i < totalPages - 1)
-                  _StepLine(done: currentPage > i),
+                if (i < totalPages - 1) _StepLine(done: currentPage > i),
               ],
             ],
           ),
@@ -233,9 +218,10 @@ class _StepDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = done || active
-        ? Theme.of(context).colorScheme.primary
-        : Colors.grey.shade300;
+    final color =
+        done || active
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.outlineVariant;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: active ? 12 : 10,
@@ -255,9 +241,10 @@ class _StepLine extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       width: 28,
       height: 2,
-      color: done
-          ? Theme.of(context).colorScheme.primary
-          : Colors.grey.shade300,
+      color:
+          done
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outlineVariant,
     );
   }
 }
@@ -289,22 +276,20 @@ class _StepPickType extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
-              children: _visibleKinds.map((kind) {
-                return _FrictionTypeCard(
-                  kind: kind,
-                  isSelected: kind == selected,
-                  onTap: () => onSelect(kind),
-                );
-              }).toList(),
+              children:
+                  _visibleKinds.map((kind) {
+                    return _FrictionTypeCard(
+                      kind: kind,
+                      isSelected: kind == selected,
+                      onTap: () => onSelect(kind),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              onPressed: onNext,
-              child: const Text('Next'),
-            ),
+            child: FilledButton(onPressed: onNext, child: const Text('Next')),
           ),
         ],
       ),
@@ -345,10 +330,11 @@ class _FrictionTypeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final meta = _meta[kind]!;
-    final color =
-        isSelected ? theme.colorScheme.primary : Colors.transparent;
+    final color = isSelected ? theme.colorScheme.primary : Colors.transparent;
     final borderColor =
-        isSelected ? theme.colorScheme.primary : Colors.grey.shade300;
+        isSelected
+            ? theme.colorScheme.primary
+            : theme.colorScheme.outlineVariant;
 
     return GestureDetector(
       onTap: onTap,
@@ -357,10 +343,12 @@ class _FrictionTypeCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.4),
+          color:
+              isSelected
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.4,
+                  ),
           border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -382,8 +370,9 @@ class _FrictionTypeCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     meta.desc,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: Colors.grey.shade600),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -408,7 +397,7 @@ class _StepConfigure extends StatelessWidget {
   final ValueChanged<bool> onRandomizeChanged;
   final ValueChanged<int> onRandomizeRangeChanged;
   final ValueChanged<int> onStepsChanged;
-  final VoidCallback onNext;
+  final VoidCallback onConfirm;
 
   const _StepConfigure({
     required this.kind,
@@ -420,7 +409,7 @@ class _StepConfigure extends StatelessWidget {
     required this.onRandomizeChanged,
     required this.onRandomizeRangeChanged,
     required this.onStepsChanged,
-    required this.onNext,
+    required this.onConfirm,
   });
 
   @override
@@ -443,9 +432,11 @@ class _StepConfigure extends StatelessWidget {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Randomize delay'),
-                    subtitle: Text(randomize
-                        ? 'Varies by +/- $randomizeRange s each time'
-                        : 'Same delay every time'),
+                    subtitle: Text(
+                      randomize
+                          ? 'Varies by +/- $randomizeRange s each time'
+                          : 'Same delay every time',
+                    ),
                     value: randomize,
                     onChanged: onRandomizeChanged,
                   ),
@@ -461,14 +452,14 @@ class _StepConfigure extends StatelessWidget {
                   ],
                 ],
                 if (kind == FrictionKind.confirmation) ...[
-                  const Text('Confirmation Steps',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Confirmation Steps',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'How many "Are you sure?" screens to show',
-                    style: TextStyle(
-                        color: Colors.grey.shade600, fontSize: 13),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Slider(
                     value: confirmationSteps.toDouble(),
@@ -486,197 +477,11 @@ class _StepConfigure extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: onNext,
-              child: const Text('Next'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Step 3: When to apply ────────────────────────────────────────────────────
-
-class _StepWhen extends StatelessWidget {
-  final FrictionMode mode;
-  final int openThreshold;
-  final ValueChanged<FrictionMode> onModeChanged;
-  final ValueChanged<int> onThresholdChanged;
-  final VoidCallback onConfirm;
-
-  const _StepWhen({
-    required this.mode,
-    required this.openThreshold,
-    required this.onModeChanged,
-    required this.onThresholdChanged,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ListView(
-              children: [
-                _ModeCard(
-                  mode: FrictionMode.always,
-                  selectedMode: mode,
-                  icon: Icons.all_inclusive,
-                  label: 'Always',
-                  description: 'Show friction every time the app is opened',
-                  onTap: () => onModeChanged(FrictionMode.always),
-                ),
-                _ModeCard(
-                  mode: FrictionMode.afterOpens,
-                  selectedMode: mode,
-                  icon: Icons.filter_list,
-                  label: 'After free opens',
-                  description:
-                      'First opens today are free — friction kicks in after that',
-                  onTap: () => onModeChanged(FrictionMode.afterOpens),
-                  extra: mode == FrictionMode.afterOpens
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            Text(
-                              'Free opens per day: $openThreshold',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary),
-                            ),
-                            Slider(
-                              value: openThreshold.toDouble(),
-                              min: 1,
-                              max: 10,
-                              divisions: 9,
-                              label: '$openThreshold',
-                              onChanged: (v) =>
-                                  onThresholdChanged(v.round()),
-                            ),
-                          ],
-                        )
-                      : null,
-                ),
-                _ModeCard(
-                  mode: FrictionMode.escalating,
-                  selectedMode: mode,
-                  icon: Icons.trending_up,
-                  label: 'Escalating',
-                  description:
-                      'Friction intensifies with each open — starts easy, gets harder',
-                  onTap: () => onModeChanged(FrictionMode.escalating),
-                  extra: mode == FrictionMode.escalating
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            'Default: open 1–2 free  →  open 3–5 light  →  open 6+ full\n'
-                            'Fine-tune the tiers in the app settings after saving.',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey.shade600),
-                          ),
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
               onPressed: onConfirm,
               child: const Text('Add Friction'),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ModeCard extends StatelessWidget {
-  final FrictionMode mode;
-  final FrictionMode selectedMode;
-  final IconData icon;
-  final String label;
-  final String description;
-  final VoidCallback onTap;
-  final Widget? extra;
-
-  const _ModeCard({
-    required this.mode,
-    required this.selectedMode,
-    required this.icon,
-    required this.label,
-    required this.description,
-    required this.onTap,
-    this.extra,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isSelected = mode == selectedMode;
-    final color =
-        isSelected ? theme.colorScheme.primary : Colors.transparent;
-    final borderColor =
-        isSelected ? theme.colorScheme.primary : Colors.grey.shade300;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.4),
-          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : null,
-                        ),
-                      ),
-                      Text(
-                        description,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isSelected)
-                  Icon(Icons.check_circle, color: color, size: 20),
-              ],
-            ),
-            if (extra != null) extra!,
-          ],
-        ),
       ),
     );
   }
