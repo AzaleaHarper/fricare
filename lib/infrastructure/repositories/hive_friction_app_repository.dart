@@ -13,8 +13,18 @@ class HiveFrictionAppRepository implements FrictionAppRepository {
   late Box<FrictionSettings> _settingsBox;
 
   Future<void> init() async {
-    _appsBox = await Hive.openBox<FrictionApp>(_appsBoxName);
-    _settingsBox = await Hive.openBox<FrictionSettings>(_settingsBoxName);
+    _appsBox = await _openOrReset<FrictionApp>(_appsBoxName);
+    _settingsBox = await _openOrReset<FrictionSettings>(_settingsBoxName);
+  }
+
+  /// Opens a Hive box, wiping corrupted data if the schema has changed.
+  Future<Box<T>> _openOrReset<T>(String name) async {
+    try {
+      return await Hive.openBox<T>(name);
+    } catch (_) {
+      await Hive.deleteBoxFromDisk(name).catchError((_) => null);
+      return await Hive.openBox<T>(name);
+    }
   }
 
   @override
