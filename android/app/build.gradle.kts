@@ -13,6 +13,7 @@ val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val hasSigningConfig = keystoreProperties.containsKey("keyAlias")
 
 android {
     namespace = "com.fricare.fricare"
@@ -37,7 +38,7 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (hasSigningConfig) {
             create("release") {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
@@ -49,7 +50,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasSigningConfig) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
