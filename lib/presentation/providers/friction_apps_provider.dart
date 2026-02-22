@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/friction_app.dart';
 import '../../domain/models/friction_type.dart';
 import '../../infrastructure/platform/method_channels.dart';
-import '../../infrastructure/repositories/hive_friction_app_repository.dart';
+import '../../domain/repositories/friction_app_repository.dart';
 import '../../infrastructure/services/app_sync_service.dart';
 import '../../infrastructure/services/installed_apps_service.dart';
 
-final repositoryProvider = Provider<HiveFrictionAppRepository>((ref) {
+final repositoryProvider = Provider<FrictionAppRepository>((ref) {
   throw UnimplementedError('Must be overridden in ProviderScope');
 });
 
@@ -33,8 +33,8 @@ final appIconsProvider = Provider<Map<String, Uint8List?>>((ref) {
 
 final frictionAppsProvider =
     NotifierProvider<FrictionAppsNotifier, List<FrictionApp>>(
-  FrictionAppsNotifier.new,
-);
+      FrictionAppsNotifier.new,
+    );
 
 class FrictionAppsNotifier extends Notifier<List<FrictionApp>> {
   @override

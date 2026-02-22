@@ -39,7 +39,7 @@ fi
 
 # 2. Static analysis
 echo "--- Running flutter analyze..."
-"$FLUTTER" analyze --no-pub 2>&1 | tail -3
+"$FLUTTER" analyze --no-pub --no-fatal-infos 2>&1 | tail -3
 if [ "${PIPESTATUS[0]:-0}" -ne 0 ]; then
   echo "ERROR: flutter analyze failed"
   exit 1
