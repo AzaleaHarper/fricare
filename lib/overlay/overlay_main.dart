@@ -13,11 +13,13 @@ import '../presentation/widgets/friction_puzzle.dart';
 /// Launched by OverlayActivity with a dedicated Flutter engine.
 @pragma('vm:entry-point')
 void overlayMain() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(useMaterial3: true),
-    home: const OverlayScreen(),
-  ));
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true),
+      home: const OverlayScreen(),
+    ),
+  );
 }
 
 class OverlayScreen extends StatefulWidget {
@@ -58,9 +60,10 @@ class _OverlayScreenState extends State<OverlayScreen> {
           .timeout(const Duration(seconds: 5));
       if (config != null && mounted) {
         final chainJson = config['chainStepsJson'] as String? ?? '[]';
-        final chainList = (jsonDecode(chainJson) as List)
-            .map((e) => ChainStep.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final chainList =
+            (jsonDecode(chainJson) as List)
+                .map((e) => ChainStep.fromJson(e as Map<String, dynamic>))
+                .toList();
 
         setState(() {
           _appName = config['appName'] as String;
@@ -124,30 +127,38 @@ class _OverlayScreenState extends State<OverlayScreen> {
       return Scaffold(
         backgroundColor: Colors.black87,
         body: Center(
-          child: _error
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: Colors.white70, size: 48),
-                    const SizedBox(height: 16),
-                    const Text('Failed to load friction',
-                        style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _loadConfig,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _onCancel,
-                      child: const Text('Cancel',
-                          style: TextStyle(color: Colors.white54)),
-                    ),
-                  ],
-                )
-              : const CircularProgressIndicator(),
+          child:
+              _error
+                  ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Failed to load friction',
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: _loadConfig,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: _onCancel,
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                    ],
+                  )
+                  : const CircularProgressIndicator(),
         ),
       );
     }
@@ -170,23 +181,22 @@ class _OverlayScreenState extends State<OverlayScreen> {
               if (_isChainMode) ...[
                 Text(
                   'Step ${_chainIndex + 1} of ${_chainSteps.length}',
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children:
-                      List.generate(_chainSteps.length, (i) {
+                  children: List.generate(_chainSteps.length, (i) {
                     return Container(
                       width: 8,
                       height: 8,
                       margin: const EdgeInsets.symmetric(horizontal: 3),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: i < _chainIndex
-                            ? Colors.green
-                            : i == _chainIndex
+                        color:
+                            i < _chainIndex
+                                ? Colors.green
+                                : i == _chainIndex
                                 ? Colors.white
                                 : Colors.white24,
                       ),
@@ -223,6 +233,7 @@ class _OverlayScreenState extends State<OverlayScreen> {
           totalSteps: _confirmationSteps,
           appName: _appName,
           onComplete: _onStepComplete,
+          onCancel: _onCancel,
         );
       case FrictionKind.math:
         return FrictionMath(

@@ -16,8 +16,8 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -240,35 +240,37 @@ class AppLaunchDetectorService : Service() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val json = prefs.getString(KEY_MONITORED_APPS, null) ?: return
         try {
-            val type = object : TypeToken<List<Map<String, Any>>>() {}.type
-            val rawList: List<Map<String, Any>> = Gson().fromJson(json, type)
+            val rawList = JSONArray(json)
             monitoredApps.clear()
-            for (raw in rawList) {
-                val pkg = raw["packageName"] as? String ?: continue
-                val stepsRaw = (raw["escalationSteps"] as? List<*>) ?: emptyList<Any>()
-                val steps = stepsRaw.mapNotNull { s ->
-                    (s as? Map<*, *>)?.let {
-                        EscalationStepData(
-                            fromOpen = (it["fromOpen"] as? Double)?.toInt() ?: 1,
-                            kind = (it["kind"] as? Double)?.toInt() ?: KIND_NONE,
-                            delaySeconds = (it["delaySeconds"] as? Double)?.toInt() ?: 0,
-                        )
-                    }
+            for (i in 0 until rawList.length()) {
+                val raw = rawList.getJSONObject(i)
+                val pkg = raw.optString("packageName", "")
+                if (pkg.isEmpty()) continue
+
+                val stepsArray = raw.optJSONArray("escalationSteps") ?: JSONArray()
+                val steps = (0 until stepsArray.length()).mapNotNull { j ->
+                    val s = stepsArray.optJSONObject(j) ?: return@mapNotNull null
+                    EscalationStepData(
+                        fromOpen = s.optInt("fromOpen", 1),
+                        kind = s.optInt("kind", KIND_NONE),
+                        delaySeconds = s.optInt("delaySeconds", 0),
+                    )
                 }
-                val chainRaw = (raw["chainSteps"] as? List<*>) ?: emptyList<Any>()
-                val chainJson = Gson().toJson(chainRaw)
+
+                val chainArray = raw.optJSONArray("chainSteps") ?: JSONArray()
+                val chainJson = chainArray.toString()
 
                 monitoredApps[pkg] = AppFrictionData(
                     packageName = pkg,
-                    appName = raw["appName"] as? String ?: pkg,
-                    kind = (raw["kind"] as? Double)?.toInt() ?: KIND_HOLD,
-                    delaySeconds = (raw["delaySeconds"] as? Double)?.toInt() ?: 3,
-                    confirmationSteps = (raw["confirmationSteps"] as? Double)?.toInt() ?: 2,
-                    puzzleTaps = (raw["puzzleTaps"] as? Double)?.toInt() ?: 5,
-                    mathProblems = (raw["mathProblems"] as? Double)?.toInt() ?: 3,
+                    appName = raw.optString("appName", pkg),
+                    kind = raw.optInt("kind", KIND_HOLD),
+                    delaySeconds = raw.optInt("delaySeconds", 3),
+                    confirmationSteps = raw.optInt("confirmationSteps", 2),
+                    puzzleTaps = raw.optInt("puzzleTaps", 5),
+                    mathProblems = raw.optInt("mathProblems", 3),
                     chainStepsJson = chainJson,
-                    mode = (raw["mode"] as? Double)?.toInt() ?: MODE_ALWAYS,
-                    openThreshold = (raw["openThreshold"] as? Double)?.toInt() ?: 3,
+                    mode = raw.optInt("mode", MODE_ALWAYS),
+                    openThreshold = raw.optInt("openThreshold", 3),
                     escalationSteps = steps,
                 )
             }

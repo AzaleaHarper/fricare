@@ -26,6 +26,10 @@
     <!-- Request battery optimization exemption -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- Block permissions injected by dependencies that we don't need -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"
+        tools:node="remove" />
+
     <application
         android:label="Fricare"
         android:name="${applicationName}"
@@ -72,6 +76,13 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Disable AndroidX startup InitializationProvider (not needed, flagged by F-Droid) -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="remove" />
 
         <meta-data
             android:name="flutterEmbedding"

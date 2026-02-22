@@ -4,12 +4,14 @@ class FrictionConfirmation extends StatefulWidget {
   final int totalSteps;
   final String appName;
   final VoidCallback onComplete;
+  final VoidCallback? onCancel;
 
   const FrictionConfirmation({
     super.key,
     required this.totalSteps,
     required this.appName,
     required this.onComplete,
+    this.onCancel,
   });
 
   @override
@@ -34,7 +36,11 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
   }
 
   void _cancel() {
-    Navigator.of(context).maybePop();
+    if (widget.onCancel != null) {
+      widget.onCancel!();
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   @override
@@ -73,9 +79,10 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: i <= _currentStep
-                    ? theme.colorScheme.primary
-                    : Colors.grey.shade300,
+                color:
+                    i <= _currentStep
+                        ? theme.colorScheme.primary
+                        : Colors.grey.shade300,
               ),
             );
           }),
@@ -84,17 +91,12 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            OutlinedButton(
-              onPressed: _cancel,
-              child: const Text('Go Back'),
-            ),
+            OutlinedButton(onPressed: _cancel, child: const Text('Go Back')),
             const SizedBox(width: 16),
             FilledButton(
               onPressed: _confirm,
               child: Text(
-                _currentStep + 1 >= widget.totalSteps
-                    ? 'Open App'
-                    : 'Continue',
+                _currentStep + 1 >= widget.totalSteps ? 'Open App' : 'Continue',
               ),
             ),
           ],
