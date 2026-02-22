@@ -27,8 +27,7 @@ class FricarePlatform {
 
   /// Check if usage stats permission is granted.
   static Future<bool> hasUsageStatsPermission() async {
-    final result =
-        await _channel.invokeMethod<bool>('hasUsageStatsPermission');
+    final result = await _channel.invokeMethod<bool>('hasUsageStatsPermission');
     return result ?? false;
   }
 
@@ -46,5 +45,16 @@ class FricarePlatform {
   /// Launch a specific app by package name.
   static Future<void> launchApp(String packageName) async {
     await _channel.invokeMethod('launchApp', {'packageName': packageName});
+  }
+
+  /// Check if the app is subject to battery optimization (bad for background).
+  static Future<bool> isBatteryOptimized() async {
+    final result = await _channel.invokeMethod<bool>('isBatteryOptimized');
+    return result ?? true;
+  }
+
+  /// Request exemption from battery optimization (shows system dialog).
+  static Future<void> requestBatteryOptimizationExemption() async {
+    await _channel.invokeMethod('requestBatteryOptimizationExemption');
   }
 }

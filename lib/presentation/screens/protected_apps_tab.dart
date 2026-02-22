@@ -23,7 +23,9 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Auto-start service if toggle is on (covers cold start / process restart).
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureServiceRunning());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _ensureServiceRunning(),
+    );
   }
 
   @override
@@ -71,7 +73,8 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
         context,
         icon: Icons.bar_chart,
         title: 'Usage Access Required',
-        reason: 'Fricare needs to see which app is in the foreground so it '
+        reason:
+            'Fricare needs to see which app is in the foreground so it '
             'can show a friction challenge before the app opens.\n\n'
             'On the next screen, find Fricare and enable usage access.',
         onGrant: FricarePlatform.requestUsageStatsPermission,
@@ -89,12 +92,29 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
         context,
         icon: Icons.layers,
         title: 'Display Over Apps Required',
-        reason: 'Fricare needs to display the friction challenge on top of '
+        reason:
+            'Fricare needs to display the friction challenge on top of '
             'the app you are opening.\n\n'
             'On the next screen, enable "Allow display over other apps".',
         onGrant: FricarePlatform.requestOverlayPermission,
       );
       return;
+    }
+
+    // Request battery optimization exemption for reliable background operation.
+    final isBatteryOptimized = await FricarePlatform.isBatteryOptimized();
+    if (isBatteryOptimized) {
+      if (!context.mounted) return;
+      await _showPermissionDialog(
+        context,
+        icon: Icons.battery_saver,
+        title: 'Disable Battery Optimization',
+        reason:
+            'Fricare needs to run in the background to detect app launches. '
+            'Without this, Android may kill the service when the app is closed.\n\n'
+            'On the next screen, allow Fricare to run unrestricted.',
+        onGrant: FricarePlatform.requestBatteryOptimizationExemption,
+      );
     }
 
     await FricarePlatform.startMonitoringService();
@@ -109,21 +129,22 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
   }) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(icon, size: 36),
-        title: Text(title),
-        content: Text(reason),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            icon: Icon(icon, size: 36),
+            title: Text(title),
+            content: Text(reason),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Open Settings'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
     );
     if (result == true) {
       await onGrant();
@@ -148,19 +169,19 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: settings.globalEnabled
-                      ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                      : Colors.grey.shade300,
+                  color:
+                      settings.globalEnabled
+                          ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                          : Colors.grey.shade300,
                 ),
               ),
               child: SwitchListTile(
                 secondary: Icon(
-                  settings.globalEnabled
-                      ? Icons.shield
-                      : Icons.shield_outlined,
-                  color: settings.globalEnabled
-                      ? theme.colorScheme.primary
-                      : Colors.grey,
+                  settings.globalEnabled ? Icons.shield : Icons.shield_outlined,
+                  color:
+                      settings.globalEnabled
+                          ? theme.colorScheme.primary
+                          : Colors.grey,
                 ),
                 title: Text(
                   settings.globalEnabled
@@ -168,9 +189,10 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                       : 'Friction is paused',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: settings.globalEnabled
-                        ? theme.colorScheme.primary
-                        : Colors.grey.shade700,
+                    color:
+                        settings.globalEnabled
+                            ? theme.colorScheme.primary
+                            : Colors.grey.shade700,
                   ),
                 ),
                 subtitle: Text(
@@ -181,9 +203,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                 ),
                 value: settings.globalEnabled,
                 onChanged: (value) async {
-                  await ref
-                      .read(settingsProvider.notifier)
-                      .toggleGlobal(value);
+                  await ref.read(settingsProvider.notifier).toggleGlobal(value);
                   if (context.mounted) await _toggleService(context, value);
                 },
               ),
@@ -197,17 +217,24 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shield_outlined,
-                      size: 64, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 64,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 16),
-                  Text('No apps protected yet',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(color: Colors.grey)),
+                  Text(
+                    'No apps protected yet',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Go to Browse to add friction to apps',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: Colors.grey),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
@@ -219,8 +246,9 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
               padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
               child: Text(
                 '${frictionApps.length} app${frictionApps.length == 1 ? '' : 's'} protected',
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: Colors.grey.shade600),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
           ),
@@ -235,19 +263,23 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                 icon: icons[app.packageName],
                 enabled: app.enabled,
                 config: app.frictionConfig,
-                onToggleEnabled: (v) => ref
-                    .read(frictionAppsProvider.notifier)
-                    .toggleApp(app.packageName, v),
-                onRemove: () => ref
-                    .read(frictionAppsProvider.notifier)
-                    .removeApp(app.packageName),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        AppConfigScreen(packageName: app.packageName),
-                  ),
-                ),
+                onToggleEnabled:
+                    (v) => ref
+                        .read(frictionAppsProvider.notifier)
+                        .toggleApp(app.packageName, v),
+                onRemove:
+                    () => ref
+                        .read(frictionAppsProvider.notifier)
+                        .removeApp(app.packageName),
+                onTap:
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) =>
+                                AppConfigScreen(packageName: app.packageName),
+                      ),
+                    ),
               );
             },
           ),
@@ -285,9 +317,10 @@ class _ProtectedAppTile extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
-      leading: icon != null && icon!.isNotEmpty
-          ? Image.memory(icon!, width: 36, height: 36)
-          : const Icon(Icons.android, size: 36, color: Colors.grey),
+      leading:
+          icon != null && icon!.isNotEmpty
+              ? Image.memory(icon!, width: 36, height: 36)
+              : const Icon(Icons.android, size: 36, color: Colors.grey),
       title: Text(
         appName,
         style: enabled ? null : TextStyle(color: theme.disabledColor),
@@ -295,9 +328,10 @@ class _ProtectedAppTile extends StatelessWidget {
       subtitle: Row(
         children: [
           Flexible(
-            child: config.chainSteps.isNotEmpty
-                ? _ChainChip(config.chainSteps)
-                : _KindChip(config.kind),
+            child:
+                config.chainSteps.isNotEmpty
+                    ? _ChainChip(config.chainSteps)
+                    : _KindChip(config.kind),
           ),
           const SizedBox(width: 6),
           _ModeChip(config),
@@ -306,10 +340,7 @@ class _ProtectedAppTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Switch(
-            value: enabled,
-            onChanged: onToggleEnabled,
-          ),
+          Switch(value: enabled, onChanged: onToggleEnabled),
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 20),
             color: Colors.grey,
@@ -349,12 +380,12 @@ class _ChainChip extends StatelessWidget {
   const _ChainChip(this.steps);
 
   static String _kindShort(FrictionKind kind) => switch (kind) {
-        FrictionKind.holdToOpen => 'Hold',
-        FrictionKind.puzzle => 'Puzzle',
-        FrictionKind.confirmation => 'Confirm',
-        FrictionKind.math => 'Math',
-        FrictionKind.none => 'None',
-      };
+    FrictionKind.holdToOpen => 'Hold',
+    FrictionKind.puzzle => 'Puzzle',
+    FrictionKind.confirmation => 'Confirm',
+    FrictionKind.math => 'Math',
+    FrictionKind.none => 'None',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -376,13 +407,14 @@ class _ModeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = switch (config.mode) {
       FrictionMode.always => ('Always', Colors.blue),
-      FrictionMode.afterOpens =>
-        ('After ${config.openThreshold} opens', Colors.orange),
+      FrictionMode.afterOpens => (
+        'After ${config.openThreshold} opens',
+        Colors.orange,
+      ),
       FrictionMode.escalating => ('Escalating', Colors.purple),
     };
     return Chip(
-      label: Text(label,
-          style: TextStyle(fontSize: 11, color: color.shade700)),
+      label: Text(label, style: TextStyle(fontSize: 11, color: color.shade700)),
       backgroundColor: color.shade50,
       side: BorderSide(color: color.shade200),
       visualDensity: VisualDensity.compact,

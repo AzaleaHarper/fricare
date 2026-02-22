@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Pre-commit checks ==="
+
+# Find flutter binary
+FLUTTER="$(command -v flutter 2>/dev/null || echo "")"
+if [ -z "$FLUTTER" ]; then
+  for candidate in /opt/flutter/bin/flutter "$HOME/flutter/bin/flutter" "$HOME/.flutter/bin/flutter"; do
+    if [ -x "$candidate" ]; then
+      FLUTTER="$candidate"
+      break
+    fi
+  done
+fi
+
+if [ -z "$FLUTTER" ]; then
+  echo "ERROR: flutter not found in PATH. Skipping checks."
+  exit 1
+fi
+
+DART="${FLUTTER%flutter}dart"
+
+# 1. Check formatting on staged .dart files only
+STAGED_DART=$(git diff --cached --name-only --diff-filter=ACM -- '*.dart' || true)
+if [ -n "$STAGED_DART" ]; then
+  echo "--- Checking dart format..."
+  UNFORMATTED=$("$DART" format --set-exit-if-changed --output=none $STAGED_DART 2>&1) || {
+    echo "ERROR: These files need formatting:"
+    echo "$UNFORMATTED"
+    echo ""
+    echo "Run: dart format ."
+    exit 1
+  }
+  echo "    Format OK"
+else
+  echo "--- No staged .dart files, skipping format check"
+fi
+
+# 2. Static analysis
+echo "--- Running flutter analyze..."
+"$FLUTTER" analyze --no-pub 2>&1 | tail -3
+if [ "${PIPESTATUS[0]:-0}" -ne 0 ]; then
+  echo "ERROR: flutter analyze failed"
+  exit 1
+fi
+
+# 3. Tests
+echo "--- Running flutter test..."
+"$FLUTTER" test --no-pub 2>&1 | tail -5
+if [ "${PIPESTATUS[0]:-0}" -ne 0 ]; then
+  echo "ERROR: flutter test failed"
+  exit 1
+fi
+
+echo "=== All checks passed ==="

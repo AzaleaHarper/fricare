@@ -52,6 +52,15 @@ flutter build apk --debug
 flutter build apk --release
 ```
 
+### Pre-commit Hooks
+
+```bash
+# Activate formatting, analysis, and test checks before each commit
+bash .githooks/setup.sh
+```
+
+This runs `dart format`, `flutter analyze`, and `flutter test` on every commit, matching the CI pipeline.
+
 ### Release Signing
 
 Create `android/key.properties` (gitignored):

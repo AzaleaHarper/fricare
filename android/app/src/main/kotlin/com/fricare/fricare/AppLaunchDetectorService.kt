@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -51,6 +52,7 @@ class AppLaunchDetectorService : Service() {
     private var lastForegroundPackage: String? = null
     private var monitoredApps = mutableMapOf<String, AppFrictionData>()
     private val activeOverlays = mutableSetOf<String>()
+    private var wakeLock: PowerManager.WakeLock? = null
 
     data class EscalationStepData(
         val fromOpen: Int,
@@ -83,6 +85,7 @@ class AppLaunchDetectorService : Service() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
+        acquireWakeLock()
         loadMonitoredApps()
         isRunning = true
         handler.post(pollRunnable)
@@ -91,6 +94,7 @@ class AppLaunchDetectorService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(pollRunnable)
+        releaseWakeLock()
         isRunning = false
         Log.d(TAG, "Service stopped")
         super.onDestroy()
@@ -101,6 +105,33 @@ class AppLaunchDetectorService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         loadMonitoredApps()
         return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Re-deliver the service when the user swipes the app from recents
+        Log.d(TAG, "Task removed, scheduling service restart")
+        val restartIntent = Intent(this, AppLaunchDetectorService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(restartIntent)
+        } else {
+            startService(restartIntent)
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
+    private fun acquireWakeLock() {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "fricare:monitoring"
+        ).apply { acquire() }
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) it.release()
+        }
+        wakeLock = null
     }
 
     private fun checkForegroundApp() {

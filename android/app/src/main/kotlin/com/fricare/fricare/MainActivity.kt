@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
@@ -80,6 +81,13 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_ARG", "packageName required", null)
                         }
                     }
+                    "isBatteryOptimized" -> {
+                        result.success(isBatteryOptimized())
+                    }
+                    "requestBatteryOptimizationExemption" -> {
+                        requestBatteryOptimizationExemption()
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -111,6 +119,19 @@ class MainActivity : FlutterActivity() {
 
     private fun requestUsageStatsPermission() {
         startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+    }
+
+    private fun isBatteryOptimized(): Boolean {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return !pm.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    @android.annotation.SuppressLint("BatteryLife")
+    private fun requestBatteryOptimizationExemption() {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = android.net.Uri.parse("package:$packageName")
+        }
+        startActivity(intent)
     }
 
     private fun launchApp(targetPackageName: String) {
