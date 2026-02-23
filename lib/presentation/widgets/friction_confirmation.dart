@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 class FrictionConfirmation extends StatefulWidget {
@@ -20,6 +22,7 @@ class FrictionConfirmation extends StatefulWidget {
 
 class _FrictionConfirmationState extends State<FrictionConfirmation> {
   int _currentStep = 0;
+  Timer? _cooldownTimer;
 
   static const _prompts = [
     'Do you really want to open this app?',
@@ -27,11 +30,25 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
     'Last chance. Still want to continue?',
   ];
 
+  static const _cooldownDuration = Duration(milliseconds: 500);
+
+  bool get _cooldown => _cooldownTimer?.isActive ?? false;
+
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    super.dispose();
+  }
+
   void _confirm() {
+    if (_cooldown) return;
     if (_currentStep + 1 >= widget.totalSteps) {
       widget.onComplete();
     } else {
       setState(() => _currentStep++);
+      _cooldownTimer = Timer(_cooldownDuration, () {
+        if (mounted) setState(() {});
+      });
     }
   }
 
@@ -100,7 +117,7 @@ class _FrictionConfirmationState extends State<FrictionConfirmation> {
             OutlinedButton(onPressed: _cancel, child: const Text('Go Back')),
             const SizedBox(width: 16),
             FilledButton(
-              onPressed: _confirm,
+              onPressed: _cooldown ? null : _confirm,
               child: Text(
                 _currentStep + 1 >= widget.totalSteps ? 'Open App' : 'Continue',
               ),

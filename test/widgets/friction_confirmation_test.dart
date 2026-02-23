@@ -31,10 +31,26 @@ void main() {
     await tester.pumpWidget(buildWidget(totalSteps: 3));
 
     await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Step 2 of 3'), findsOneWidget);
     expect(find.text('Are you sure? Think about it.'), findsOneWidget);
+  });
+
+  testWidgets('Continue button is disabled during cooldown', (tester) async {
+    await tester.pumpWidget(buildWidget(totalSteps: 3));
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+
+    // Button should be disabled (onPressed is null).
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNull);
+
+    // After cooldown expires, button should be enabled again.
+    await tester.pumpAndSettle();
+    final buttonAfter = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(buttonAfter.onPressed, isNotNull);
   });
 
   testWidgets('final step shows Open App button', (tester) async {
@@ -42,7 +58,7 @@ void main() {
 
     // Advance to step 2 (final)
     await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Open App'), findsOneWidget);
   });
@@ -70,7 +86,7 @@ void main() {
     expect(find.text('Step 1 of 3'), findsOneWidget);
 
     await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Step 2 of 3'), findsOneWidget);
   });
 
