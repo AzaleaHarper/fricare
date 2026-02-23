@@ -30,8 +30,11 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
     super.dispose();
   }
 
-  Future<void> _onAppChecked(String packageName, String appName) async {
-    await ref.read(frictionAppsProvider.notifier).addApp(packageName, appName);
+  Future<void> _onAppTapped(String packageName, String appName) async {
+    final notifier = ref.read(frictionAppsProvider.notifier);
+    if (!notifier.isAppSelected(packageName)) {
+      await notifier.addApp(packageName, appName);
+    }
     if (!mounted) return;
     Navigator.push(
       context,
@@ -49,7 +52,42 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
 
     return installedApps.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error loading apps: $err')),
+      error:
+          (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Could not load installed apps',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This can happen after installing or updating an app. '
+                    'Try again in a moment.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () => ref.invalidate(installedAppsProvider),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
       data: (apps) {
         final filtered =
             _query.isEmpty
@@ -70,7 +108,7 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: SearchBar(
                   controller: _searchController,
-                  hintText: 'Search apps…',
+                  hintText: 'Search apps\u2026',
                   leading: const Icon(Icons.search, size: 20),
                   trailing:
                       _query.isNotEmpty
@@ -115,36 +153,15 @@ class _BrowseAppsTabState extends ConsumerState<BrowseAppsTab> {
                     frictionApps
                         .where((a) => a.packageName == app.packageName)
                         .firstOrNull;
-                final isSelected = frictionApp != null;
+                final isManaged = frictionApp != null;
 
                 return AppListTile(
                   appName: app.appName,
                   packageName: app.packageName,
                   icon: app.icon,
-                  isSelected: isSelected,
-                  frictionEnabled: frictionApp?.enabled,
+                  isManaged: isManaged,
                   frictionKind: frictionApp?.frictionConfig.kind,
-                  onToggle: (selected) {
-                    if (selected) {
-                      _onAppChecked(app.packageName, app.appName);
-                    } else {
-                      ref
-                          .read(frictionAppsProvider.notifier)
-                          .removeApp(app.packageName);
-                    }
-                  },
-                  onTap:
-                      isSelected
-                          ? () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => AppConfigScreen(
-                                    packageName: app.packageName,
-                                  ),
-                            ),
-                          )
-                          : null,
+                  onTap: () => _onAppTapped(app.packageName, app.appName),
                 );
               },
             ),

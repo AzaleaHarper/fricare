@@ -9,15 +9,19 @@ import '../providers/friction_apps_provider.dart';
 import '../providers/settings_provider.dart';
 import 'app_config_screen.dart';
 
-class ProtectedAppsTab extends ConsumerStatefulWidget {
-  const ProtectedAppsTab({super.key});
+class ManagedAppsTab extends ConsumerStatefulWidget {
+  const ManagedAppsTab({super.key});
 
   @override
-  ConsumerState<ProtectedAppsTab> createState() => _ProtectedAppsTabState();
+  ConsumerState<ManagedAppsTab> createState() => _ManagedAppsTabState();
 }
 
-class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
+class _ManagedAppsTabState extends ConsumerState<ManagedAppsTab>
     with WidgetsBindingObserver {
+  final Set<String> _selectedPackages = {};
+
+  bool get _isSelecting => _selectedPackages.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -151,12 +155,115 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
     }
   }
 
+  Future<bool> _confirmRemove(
+    BuildContext context, {
+    required int count,
+    String? appName,
+  }) async {
+    final isSingle = count == 1;
+    final title = isSingle ? 'Remove app?' : 'Remove $count apps?';
+    final message =
+        isSingle
+            ? 'Remove ${appName ?? 'this app'}? '
+                'This will delete all friction settings for this app.'
+            : 'Remove $count apps? '
+                'This will delete all friction settings for these apps.';
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            icon: Icon(
+              Icons.delete_outline,
+              size: 36,
+              color: Theme.of(ctx).colorScheme.error,
+            ),
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Remove'),
+              ),
+            ],
+          ),
+    );
+    return result ?? false;
+  }
+
+  void _toggleSelection(String packageName) {
+    setState(() {
+      if (_selectedPackages.contains(packageName)) {
+        _selectedPackages.remove(packageName);
+      } else {
+        _selectedPackages.add(packageName);
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() => _selectedPackages.clear());
+  }
+
+  void _selectAll(List<String> allPackages) {
+    setState(() {
+      if (_selectedPackages.length == allPackages.length) {
+        _selectedPackages.clear();
+      } else {
+        _selectedPackages
+          ..clear()
+          ..addAll(allPackages);
+      }
+    });
+  }
+
+  Future<void> _toggleSelected() async {
+    final notifier = ref.read(frictionAppsProvider.notifier);
+    final apps = ref.read(frictionAppsProvider);
+    // Toggle to opposite of majority state.
+    final enabledCount =
+        apps
+            .where(
+              (a) => _selectedPackages.contains(a.packageName) && a.enabled,
+            )
+            .length;
+    final newEnabled = enabledCount <= _selectedPackages.length / 2;
+    for (final pkg in _selectedPackages) {
+      await notifier.toggleApp(pkg, newEnabled);
+    }
+    _clearSelection();
+  }
+
+  Future<void> _deleteSelected() async {
+    if (!mounted) return;
+    final count = _selectedPackages.length;
+    final confirmed = await _confirmRemove(context, count: count);
+    if (!confirmed) return;
+
+    final notifier = ref.read(frictionAppsProvider.notifier);
+    for (final pkg in _selectedPackages.toList()) {
+      await notifier.removeApp(pkg);
+    }
+    _clearSelection();
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final frictionApps = ref.watch(frictionAppsProvider);
     final icons = ref.watch(appIconsProvider);
     final theme = Theme.of(context);
+
+    // Clean up selection if apps were removed externally.
+    final currentPackages = frictionApps.map((a) => a.packageName).toSet();
+    _selectedPackages.retainAll(currentPackages);
 
     return CustomScrollView(
       slivers: [
@@ -197,7 +304,7 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                 ),
                 subtitle: Text(
                   settings.globalEnabled
-                      ? 'Selected apps will require friction before opening'
+                      ? 'Managed apps will require friction before opening'
                       : 'All friction paused — your settings are preserved',
                   style: theme.textTheme.bodySmall,
                 ),
@@ -218,20 +325,20 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.shield_outlined,
+                    Icons.tune,
                     size: 64,
                     color: theme.colorScheme.outlineVariant,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No apps protected yet',
+                    'No apps managed yet',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Go to Browse to add friction to apps',
+                    'Go to Browse to add apps',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -241,36 +348,52 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
             ),
           )
         else ...[
+          // ── Selection bar / count header ──────────────────────────
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
-              child: Text(
-                '${frictionApps.length} app${frictionApps.length == 1 ? '' : 's'} protected',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
+            child:
+                _isSelecting
+                    ? _SelectionBar(
+                      selectedCount: _selectedPackages.length,
+                      totalCount: frictionApps.length,
+                      onSelectAll:
+                          () => _selectAll(
+                            frictionApps.map((a) => a.packageName).toList(),
+                          ),
+                      onToggle: _toggleSelected,
+                      onDelete: _deleteSelected,
+                      onClose: _clearSelection,
+                    )
+                    : Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
+                      child: Text(
+                        '${frictionApps.length} app${frictionApps.length == 1 ? '' : 's'} managed',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
           ),
+
+          // ── App list ─────────────────────────────────────────────
           SliverList.builder(
             itemCount: frictionApps.length,
             itemBuilder: (context, index) {
               final app = frictionApps[index];
-              return _ProtectedAppTile(
+              final selected = _selectedPackages.contains(app.packageName);
+
+              return _ManagedAppTile(
                 key: ValueKey(app.packageName),
                 appName: app.appName,
                 packageName: app.packageName,
                 icon: icons[app.packageName],
                 enabled: app.enabled,
                 config: app.frictionConfig,
+                isSelecting: _isSelecting,
+                isSelected: selected,
                 onToggleEnabled:
                     (v) => ref
                         .read(frictionAppsProvider.notifier)
                         .toggleApp(app.packageName, v),
-                onRemove:
-                    () => ref
-                        .read(frictionAppsProvider.notifier)
-                        .removeApp(app.packageName),
                 onTap:
                     () => Navigator.push(
                       context,
@@ -280,6 +403,8 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
                                 AppConfigScreen(packageName: app.packageName),
                       ),
                     ),
+                onLongPress: () => _toggleSelection(app.packageName),
+                onSelect: () => _toggleSelection(app.packageName),
               );
             },
           ),
@@ -289,26 +414,105 @@ class _ProtectedAppsTabState extends ConsumerState<ProtectedAppsTab>
   }
 }
 
-class _ProtectedAppTile extends StatelessWidget {
+// ── Selection action bar ──────────────────────────────────────────────
+
+class _SelectionBar extends StatelessWidget {
+  final int selectedCount;
+  final int totalCount;
+  final VoidCallback onSelectAll;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
+  final VoidCallback onClose;
+
+  const _SelectionBar({
+    required this.selectedCount,
+    required this.totalCount,
+    required this.onSelectAll,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final allSelected = selectedCount == totalCount;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Card(
+        elevation: 0,
+        color: theme.colorScheme.secondaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: onClose,
+                tooltip: 'Cancel selection',
+              ),
+              Text(
+                '$selectedCount selected',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
+                onPressed: onSelectAll,
+                tooltip: allSelected ? 'Deselect all' : 'Select all',
+              ),
+              IconButton(
+                icon: const Icon(Icons.toggle_on_outlined),
+                onPressed: onToggle,
+                tooltip: 'Toggle selected',
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: theme.colorScheme.error,
+                ),
+                onPressed: onDelete,
+                tooltip: 'Remove selected',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Individual app tile ───────────────────────────────────────────────
+
+class _ManagedAppTile extends StatelessWidget {
   final String appName;
   final String packageName;
   final Uint8List? icon;
   final bool enabled;
   final FrictionConfig config;
+  final bool isSelecting;
+  final bool isSelected;
   final ValueChanged<bool> onToggleEnabled;
-  final VoidCallback onRemove;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onSelect;
 
-  const _ProtectedAppTile({
+  const _ManagedAppTile({
     super.key,
     required this.appName,
     required this.packageName,
     this.icon,
     required this.enabled,
     required this.config,
+    required this.isSelecting,
+    required this.isSelected,
     required this.onToggleEnabled,
-    required this.onRemove,
     required this.onTap,
+    required this.onLongPress,
+    required this.onSelect,
   });
 
   @override
@@ -316,11 +520,16 @@ class _ProtectedAppTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      onTap: onTap,
-      leading:
-          icon != null && icon!.isNotEmpty
-              ? Image.memory(icon!, width: 36, height: 36)
-              : Icon(Icons.android, size: 36, color: theme.colorScheme.outline),
+      onTap: isSelecting ? onSelect : onTap,
+      onLongPress: isSelecting ? null : onLongPress,
+      leading: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isSelecting)
+            Checkbox(value: isSelected, onChanged: (_) => onSelect()),
+          _AppIcon(icon: icon, size: 36),
+        ],
+      ),
       title: Text(
         appName,
         style: enabled ? null : TextStyle(color: theme.disabledColor),
@@ -335,18 +544,30 @@ class _ProtectedAppTile extends StatelessWidget {
           ),
         ],
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Switch(value: enabled, onChanged: onToggleEnabled),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            color: theme.colorScheme.outline,
-            onPressed: onRemove,
-            tooltip: 'Remove',
-          ),
-        ],
-      ),
+      trailing:
+          isSelecting
+              ? null
+              : Switch(value: enabled, onChanged: onToggleEnabled),
+    );
+  }
+}
+
+// ── Shared helper widgets ─────────────────────────────────────────────
+
+class _AppIcon extends StatelessWidget {
+  final Uint8List? icon;
+  final double size;
+  const _AppIcon({required this.icon, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    if (icon != null && icon!.isNotEmpty) {
+      return Image.memory(icon!, width: size, height: size);
+    }
+    return Icon(
+      Icons.android,
+      size: size,
+      color: Theme.of(context).colorScheme.outline,
     );
   }
 }
@@ -387,7 +608,7 @@ class _ChainChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = steps.map((s) => _kindShort(s.kind)).join(' → ');
+    final label = steps.map((s) => _kindShort(s.kind)).join(' \u2192 ');
     return Chip(
       avatar: const Icon(Icons.link, size: 12),
       label: Text(label, style: const TextStyle(fontSize: 11)),

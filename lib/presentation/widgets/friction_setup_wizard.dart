@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/friction_type.dart';
-import 'delay_slider.dart' show ValueSlider;
+import 'value_slider.dart' show ValueSlider;
 
 /// Shows a two-step bottom sheet wizard for configuring friction on a new app.
 /// Returns a [FrictionConfig] on completion, or null if cancelled.

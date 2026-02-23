@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/friction_apps_provider.dart';
 import 'browse_apps_tab.dart';
-import 'protected_apps_tab.dart';
+import 'managed_apps_tab.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -35,15 +35,15 @@ class HomeScreen extends ConsumerWidget {
                 icon: Badge(
                   isLabelVisible: frictionApps.isNotEmpty,
                   label: Text('${frictionApps.length}'),
-                  child: const Icon(Icons.shield_outlined),
+                  child: const Icon(Icons.tune),
                 ),
-                text: 'Protected',
+                text: 'Managed',
               ),
               const Tab(icon: Icon(Icons.apps), text: 'Browse'),
             ],
           ),
         ),
-        body: const TabBarView(children: [ProtectedAppsTab(), BrowseAppsTab()]),
+        body: const TabBarView(children: [ManagedAppsTab(), BrowseAppsTab()]),
       ),
     );
   }

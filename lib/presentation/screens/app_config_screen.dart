@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/friction_type.dart';
 import '../providers/friction_apps_provider.dart';
-import '../widgets/delay_slider.dart' show ValueSlider;
+import '../widgets/value_slider.dart' show ValueSlider;
 import 'test_friction_screen.dart';
 
 class AppConfigScreen extends ConsumerWidget {
@@ -145,9 +145,65 @@ class AppConfigScreen extends ConsumerWidget {
             icon: const Icon(Icons.play_arrow),
             label: const Text('Test Friction'),
           ),
+
+          const SizedBox(height: 16),
+
+          // ── Remove button ──────────────────────────────────────────
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+              side: BorderSide(
+                color: Theme.of(
+                  context,
+                ).colorScheme.error.withValues(alpha: 0.5),
+              ),
+            ),
+            onPressed: () => _confirmAndRemove(context, ref, app.appName),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Remove App'),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmAndRemove(
+    BuildContext context,
+    WidgetRef ref,
+    String appName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            icon: Icon(
+              Icons.delete_outline,
+              size: 36,
+              color: Theme.of(ctx).colorScheme.error,
+            ),
+            title: const Text('Remove app?'),
+            content: Text(
+              'Remove $appName? '
+              'This will delete all friction settings for this app.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Remove'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+    await ref.read(frictionAppsProvider.notifier).removeApp(packageName);
+    if (context.mounted) Navigator.pop(context);
   }
 
   static List<ChainStep> _stepsFromConfig(FrictionConfig config) {

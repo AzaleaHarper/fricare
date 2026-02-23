@@ -37,11 +37,11 @@ void main() {
     );
   }
 
-  testWidgets('renders two tabs: Protected and Browse', (tester) async {
+  testWidgets('renders two tabs: Managed and Browse', (tester) async {
     await tester.pumpWidget(buildScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Protected'), findsOneWidget);
+    expect(find.text('Managed'), findsOneWidget);
     expect(find.text('Browse'), findsOneWidget);
   });
 
